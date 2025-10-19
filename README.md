@@ -281,5 +281,3 @@ Numa lab sobre uma plataforma de vendas identifiquei uma IDOR crítica que permi
 * Telefone: disponível mediante pedido
 
 ---
-
-*Ho riformattato e tradotto tutto in ordine: EN → IT → ES → PT. Se vuoi aggiungo badge SVG per certificazioni e tools, oppure preparo la PR con branch e testo pronto. Vuoi che metta anche una breve frase di apertura personalizzata diversa per ogni lingua?*
