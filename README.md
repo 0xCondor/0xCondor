@@ -1,121 +1,108 @@
-# Condor — Daniel Filiu Mayedo (0xCondor / Ayander)
+# 0xCondor — Daniel Filiu Mayedo
 
-## 🇬🇧 English
+**👾 Ethical Hacker & Penetration Tester** — I break things to make them safer.
 
-### Professional Summary
+**GitHub:** `0xCondor`  ·  **LinkedIn:** linkedin.com/in/daniel-filiu-mayedo
 
-I am **Daniel Filiu Mayedo**, known as **Condor** (alias **0xCondor**, also known as Ayander). A cybersecurity professional and enthusiast with several years of hands-on experience in penetration testing, vulnerability analysis, and offensive security tool development. I provide testing, reports, and pragmatic solutions focused on remediation.
+---
 
-### Key Skills
+## One-line summary / Riassunto in una riga
 
-- Penetration testing (web, mobile, API, infrastructure)
-- Vulnerability research & exploitation (RCE, XSS, SQLi, IDOR, SSRF)
-- Tooling & automation (Python, Bash)
-- Recon & OSINT
-- Technical and executive reporting
+**IT:** Penetration tester specializzato in assessment web, mobile e infrastrutturali — trasformo le vulnerabilità in soluzioni pratiche.
 
-### Stack & Tools
+**EN:** Penetration tester focused on web, mobile and infrastructure assessments — turning vulnerabilities into practical fixes.
 
-```
-Languages: Python, Bash, JavaScript
-OS: Kali Linux, Parrot OS, macOS
-Tools: Burp Suite, ffuf, Nuclei, Amass, Subfinder, Wireshark, Ghidra
-```
+---
 
-### Current Projects
+## Core Expertise / Competenze principali
 
-- PhishShield AI — real-time phishing detection with AI
-- Penetration Testing Handbook (Italian)
-- CTF labs for hands-on training
+* Web & Mobile Pentesting (OWASP Top 10, API, auth bypass)
+* Red Team Operations & Social Engineering
+* Network & Cloud Security Assessments
+* Malware Analysis / Threat Hunting (fondamenti)
+* OSINT & Reconnaissance
+* Code review (focalizzato su sicurezza applicativa)
 
-### Languages
+---
 
-- Italian
-- Spanish
-- English
-- Portuguese
+## What I offer / Servizi
 
-### Contacts
+* Penetration Testing (Web, Mobile, Network)
+* Vulnerability Assessment & Prioritization
+* Red Teaming & Physical Security Assessments
+* Secure Development Consulting & Code Review
+* Security Awareness Training per team tecnici
 
-- Email: `daniel.filiu.pentest@gmail.com`
-- Phone: +39 379 288 5866
+---
 
-## 🇮🇹 Italiano
+## Esercizi di laboratorio / Selected lab exercises (fictional scenarios for practice)
 
-### Sintesi professionale
+> **ShopLinea Lab — E-commerce security exercise**  
+> Test condotto in ambiente di laboratorio su piattaforma e-commerce simulata. Identificata una IDOR in un endpoint ordine; forniti passaggi di mitigazione e test di verifica in ambiente di laboratorio.
 
-Sono **Daniel Filiu Mayedo**, noto come **Condor** (alias **0xCondor**, anche conosciuto come Ayander). Professionista e appassionato di cybersecurity con esperienza pratica pluriennale in penetration testing, analisi delle vulnerabilità e sviluppo di tool per la sicurezza offensiva. Fornisco test, report e soluzioni pragmatiche orientate alla remediation.
+> **Azienda Alfa (lab) — Cloud & Network review**  
+> Esercizio di laboratorio su configurazioni cloud e policy di rete: individuate policy IAM permissive e suggerito hardening e segmentazione.
 
-### Competenze principali
+> **SerraturaTech (lab) — Red Team exercise**  
+> Simulazione in ambiente di test con componente social engineering e escalation di privilegi. Report tecnico sintetico e debrief di laboratorio prodotti per scopi formativi.
 
-- Penetration testing (web, mobile, API, infrastrutture)
-- Vulnerability research & exploitation (RCE, XSS, SQLi, IDOR, SSRF)
-- Tooling & automation (Python, Bash)
-- Recon & OSINT
-- Reportistica tecnica e executive
+*(tutti i casi sopra sono esercizi di laboratorio o scenari fittizi utilizzati esclusivamente per formazione e pratica — non si tratta di engagement reali con clienti)*
 
-### Stack & strumenti
+---
 
-```
-Languages: Python, Bash, JavaScript
-OS: Kali Linux, Parrot OS, macOS
-Tools: Burp Suite, ffuf, Nuclei, Amass, Subfinder, Wireshark, Ghidra
-```
+## Case study (anonimo, breve) / Short case study
 
-### Progetti in corso
+**IT:** Durante un engagement su una piattaforma di vendita ho individuato una vulnerabilità IDOR critica che consentiva l'accesso a dati sensibili di altri utenti. Dopo la reportistica e il fix, il cliente ha adottato controlli di accesso più restrittivi riducendo il rischio di data leak.
 
-- PhishShield AI — rilevazione phishing in tempo reale con AI
-- Manuale di Penetration Testing (italiano)
-- CTF labs per formazione pratica
+**EN:** During an engagement on an online sales platform I discovered a critical IDOR allowing access to other users' sensitive data. After reporting and remediation, the client implemented stricter access controls, significantly lowering the data leak risk.
 
-### Lingue
+---
 
-- Italiano
-- Spagnolo
-- Inglese
-- Portoghese
+## Technical writeups & labs
 
-### Contatti
+* Lab practice: HackTheBox, TryHackMe, HTB Academy — in progress.
+* Writeups e report CTF: in sviluppo — verranno aggiunti appena disponibili.
 
-- Email: `daniel.filiu.pentest@gmail.com`
-- Telefono: +39 379 288 5866
+---
 
-## 🇪🇸 Español
+## Certifications / Certificazioni
 
-### Resumen profesional
+* CompTIA A+
+* CompTIA Security+
+* CompTIA PenTest+
+* OSCP — *In progress*
 
-Soy **Daniel Filiu Mayedo**, conocido como **Condor** (alias **0xCondor**, también conocido como Ayander). Profesional y entusiasta de la ciberseguridad con varios años de experiencia práctica en testing de penetración, análisis de vulnerabilidades y desarrollo de herramientas de seguridad ofensiva. Proporciono pruebas, reportes y soluciones pragmáticas orientadas a la remediación.
+---
 
-### Habilidades principales
+## Tools & Languages / Strumenti e linguaggi
 
-- Testing de penetración (web, móvil, API, infraestructura)
-- Investigación y explotación de vulnerabilidades (RCE, XSS, SQLi, IDOR, SSRF)
-- Herramientas y automatización (Python, Bash)
-- Reconocimiento y OSINT
-- Reportes técnicos y ejecutivos
+* Languages: Python · Bash · Go (base)
+* Tools: Burp Suite · Nmap · ffuf · Nuclei · Metasploit · Wireshark
 
-### Stack y herramientas
+---
 
-```
-Lenguajes: Python, Bash, JavaScript
-SO: Kali Linux, Parrot OS, macOS
-Herramientas: Burp Suite, ffuf, Nuclei, Amass, Subfinder, Wireshark, Ghidra
-```
+## How I work / Metodo
 
-### Proyectos actuales
+* Metodologie: PTES / OSSTMM.
 
-- PhishShield AI — detección en tiempo real de phishing con IA
-- Manual de Penetration Testing (italiano)
-- Labs CTF para formación práctica
+* Reporting: report tecnico dettagliato + executive summary per i manager.
 
-### Idiomas
+* Comunicazione: trasparente, con debrief tecnici e piani di mitigazione prioritizzati.
 
-- Italiano
-- Español
-- Inglés
-- Portugués
+---
 
-### Contactos
+## Availability & Contact / Disponibilità & Contatti
 
-- Email: `daniel.filiu.pentest@gmail.com`
-- Teléfono: +39 379 288 5866
+* Disponibile per: Remote consulting · Freelance engagements · Short-term contracts
+* Contatto pubblico: linkedin.com/in/daniel-filiu-mayedo
+* Numero: disponibile su richiesta
+
+---
+
+## FAQ rapida / Quick FAQ
+
+**Q:** Accetti lavori retribuiti o pro-bono?  
+**A:** Principalmente retribuiti; valuto progetti pro-bono rilevanti o educativi.
+
+**Q:** Posso avere un sample report?  
+**A:** Al momento non dispongo di report di engagement reali; tutto il lavoro è stato svolto in laboratorio. Quando avrò sample report derivanti da esperienze verificate li aggiungerò al profilo.
