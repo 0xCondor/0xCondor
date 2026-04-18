@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #0f766e;
+}
+
+html, body { height: 100%; background: #f8fafc; color: #0f172a; }
+body { font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+.btn { @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium transition; }
+.btn-primary { @apply bg-brand-700 text-white hover:bg-brand-800; }
+.btn-ghost { @apply bg-white text-ink-800 border border-slate-200 hover:bg-slate-50; }
+.card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+.sev-critical { @apply bg-red-900 text-white; }
+.sev-high { @apply bg-red-600 text-white; }
+.sev-medium { @apply bg-amber-600 text-white; }
+.sev-low { @apply bg-blue-600 text-white; }
+.sev-info { @apply bg-slate-500 text-white; }
+.grade-A { @apply text-emerald-600; }
+.grade-B { @apply text-lime-600; }
+.grade-C { @apply text-amber-600; }
+.grade-D { @apply text-orange-600; }
+.grade-F { @apply text-red-600; }

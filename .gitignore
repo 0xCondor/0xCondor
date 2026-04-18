@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Runtime
+*.log
+*.pid
+uploads/
+storage/
+reports/*.pdf
+!reports/.gitkeep
+
+# DB
+*.sqlite
+*.db
