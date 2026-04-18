@@ -50,7 +50,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
     )
 
-    user_role = postgresql.ENUM("owner", "admin", "operator", "readonly", name="userrole", create_type=True)
+    user_role = postgresql.ENUM("owner", "admin", "operator", "readonly", name="userrole", create_type=False)
     user_role.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
@@ -96,7 +96,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
     )
 
-    asset_type = postgresql.ENUM("subdomain", "ip", "port", "service", "http_endpoint", "cert", "email_record", "dns_record", name="assettype", create_type=True)
+    asset_type = postgresql.ENUM("subdomain", "ip", "port", "service", "http_endpoint", "cert", "email_record", "dns_record", name="assettype", create_type=False)
     asset_type.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
@@ -114,9 +114,9 @@ def upgrade() -> None:
     op.create_index("ix_assets_tenant_last_seen", "assets", ["tenant_id", "last_seen_at"])
     op.create_index("ix_assets_tenant_type", "assets", ["tenant_id", "type"])
 
-    scan_status = postgresql.ENUM("queued", "running", "completed", "failed", "cancelled", name="scanstatus", create_type=True)
+    scan_status = postgresql.ENUM("queued", "running", "completed", "failed", "cancelled", name="scanstatus", create_type=False)
     scan_status.create(op.get_bind(), checkfirst=True)
-    scan_type = postgresql.ENUM("full", "incremental", "manual", name="scantype", create_type=True)
+    scan_type = postgresql.ENUM("full", "incremental", "manual", name="scantype", create_type=False)
     scan_type.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
@@ -134,9 +134,9 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
     )
 
-    severity_enum = postgresql.ENUM("info", "low", "medium", "high", "critical", name="severity", create_type=True)
+    severity_enum = postgresql.ENUM("info", "low", "medium", "high", "critical", name="severity", create_type=False)
     severity_enum.create(op.get_bind(), checkfirst=True)
-    finding_status = postgresql.ENUM("open", "acknowledged", "resolved", "false_positive", name="findingstatus", create_type=True)
+    finding_status = postgresql.ENUM("open", "acknowledged", "resolved", "false_positive", name="findingstatus", create_type=False)
     finding_status.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
