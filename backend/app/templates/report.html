@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Condor EASM — {{ tenant.name }}</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm; @bottom-center { content: "{{ report_footer }} — pagina " counter(page) " di " counter(pages); font-size: 9pt; color: #6B7280; } }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111827; font-size: 10.5pt; line-height: 1.4; }
+  h1 { color: {{ primary_color }}; font-size: 22pt; margin: 0 0 4px 0; }
+  h2 { color: {{ primary_color }}; font-size: 14pt; margin: 24px 0 10px 0; border-bottom: 2px solid {{ primary_color }}; padding-bottom: 4px; }
+  h3 { font-size: 11pt; margin: 14px 0 6px 0; color: #374151; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid {{ primary_color }}; padding-bottom: 10px; margin-bottom: 20px; }
+  .header .right { text-align: right; font-size: 9pt; color: #6B7280; }
+  .logo { max-height: 40px; }
+  .score-box { display: flex; gap: 12px; margin: 16px 0; }
+  .score-card { flex: 1; border: 1px solid #E5E7EB; padding: 12px; border-radius: 8px; text-align: center; }
+  .score-card .value { font-size: 28pt; font-weight: bold; }
+  .score-card .label { font-size: 9pt; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
+  .grade { color: {{ grade_color }}; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  th, td { text-align: left; padding: 8px 10px; font-size: 9.5pt; border-bottom: 1px solid #E5E7EB; vertical-align: top; }
+  th { background: #F3F4F6; color: #374151; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.3px; }
+  .sev { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt; font-weight: bold; text-transform: uppercase; color: white; }
+  .sev-critical { background: #991B1B; }
+  .sev-high { background: #DC2626; }
+  .sev-medium { background: #D97706; }
+  .sev-low { background: #2563EB; }
+  .sev-info { background: #6B7280; }
+  .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
+  .sev-tile { padding: 10px; border-radius: 6px; text-align: center; color: white; }
+  .sev-tile .num { font-size: 22pt; font-weight: bold; }
+  .sev-tile .name { font-size: 8pt; text-transform: uppercase; }
+  .muted { color: #6B7280; font-size: 9pt; }
+  .finding { margin: 10px 0; padding: 10px; border-left: 4px solid #E5E7EB; background: #F9FAFB; border-radius: 4px; }
+  .finding.critical { border-left-color: #991B1B; }
+  .finding.high { border-left-color: #DC2626; }
+  .finding.medium { border-left-color: #D97706; }
+  .finding.low { border-left-color: #2563EB; }
+  .finding .title { font-weight: bold; font-size: 10.5pt; }
+  .finding .asset { font-family: "Courier New", monospace; color: #374151; font-size: 9pt; margin: 3px 0; }
+  .page-break { page-break-before: always; }
+  .trend { margin: 10px 0; }
+  .bar { display: inline-block; background: {{ primary_color }}; height: 20px; vertical-align: middle; }
+  .legal { font-size: 8pt; color: #6B7280; margin-top: 24px; padding-top: 10px; border-top: 1px solid #E5E7EB; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    {% if logo_url %}<img src="{{ logo_url }}" class="logo" alt="logo">{% endif %}
+    <h1>External Attack Surface Report</h1>
+    <div class="muted">{{ tenant.name }} — periodo {{ period_start }} / {{ period_end }}</div>
+  </div>
+  <div class="right">
+    <div><strong>{{ org.name }}</strong></div>
+    <div>generato il {{ generated_at }}</div>
+  </div>
+</div>
+
+<h2>Sintesi esecutiva</h2>
+<div class="score-box">
+  <div class="score-card">
+    <div class="label">Security Score</div>
+    <div class="value grade">{{ score }}<span style="font-size: 14pt;">/100</span></div>
+  </div>
+  <div class="score-card">
+    <div class="label">Grade</div>
+    <div class="value grade">{{ grade }}</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Findings aperti</div>
+    <div class="value">{{ total_findings }}</div>
+  </div>
+</div>
+
+<div class="summary-grid">
+  <div class="sev-tile" style="background:#991B1B"><div class="num">{{ by_sev_counts.critical }}</div><div class="name">Critical</div></div>
+  <div class="sev-tile" style="background:#DC2626"><div class="num">{{ by_sev_counts.high }}</div><div class="name">High</div></div>
+  <div class="sev-tile" style="background:#D97706"><div class="num">{{ by_sev_counts.medium }}</div><div class="name">Medium</div></div>
+  <div class="sev-tile" style="background:#2563EB"><div class="num">{{ by_sev_counts.low }}</div><div class="name">Low</div></div>
+  <div class="sev-tile" style="background:#6B7280"><div class="num">{{ by_sev_counts.info }}</div><div class="name">Info</div></div>
+</div>
+
+{% if trend %}
+<h3>Andamento Security Score</h3>
+<div class="trend">
+  {% for d, s in trend %}
+    <div style="display:inline-block; width:55px; text-align:center; vertical-align:bottom;">
+      <div class="bar" style="width:14px; height:{{ s * 0.6 }}px;"></div>
+      <div class="muted" style="font-size:8pt; margin-top:3px;">{{ s }}</div>
+      <div class="muted" style="font-size:7pt;">{{ d[5:] }}</div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2>Top findings aperti</h2>
+{% if findings %}
+  {% for f in findings %}
+    <div class="finding {{ f.severity.value }}">
+      <div class="title">
+        <span class="sev sev-{{ f.severity.value }}">{{ f.severity.value }}</span>
+        {{ f.title }}
+      </div>
+      <div class="asset">{{ f.asset_value }}</div>
+      <div style="margin-top:6px;">{{ f.description }}</div>
+      {% if f.remediation %}
+      <div style="margin-top:6px;"><strong>Remediation:</strong> {{ f.remediation }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+  <p class="muted">Nessun finding aperto in questo periodo.</p>
+{% endif %}
+
+<div class="legal">
+  Questo report è il risultato di scansioni esterne non intrusive eseguite esclusivamente su domini di cui {{ org.name }}
+  ha dimostrato la proprietà tramite validazione DNS TXT. Le informazioni sono fornite a scopo informativo e non costituiscono
+  un penetration test o un audit di sicurezza completo. {{ report_footer }}
+</div>
+
+</body>
+</html>
