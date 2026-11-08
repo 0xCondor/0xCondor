@@ -117,7 +117,7 @@ export class Catalog {
   /** Ricerca semplice per parole chiave, categoria e prezzo massimo (usata dall'IA e dal fallback). */
   async search({ query = '', category, maxPrice, limit = 5 } = {}) {
     const products = await this.all();
-    const terms = tokenize(query);
+    const terms = expandSynonyms(tokenize(query));
     const scored = products
       .filter((p) => !category || p.category === category)
       .filter((p) => !maxPrice || effectivePrice(p) <= maxPrice)
@@ -133,7 +133,23 @@ export class Catalog {
   }
 }
 
-const STOPWORDS = new Set(['il', 'lo', 'la', 'i', 'gli', 'le', 'un', 'una', 'uno', 'di', 'da', 'per', 'con', 'che', 'e', 'a', 'in', 'mi', 'ti', 'del', 'della', 'dei', 'delle', 'al', 'alla', 'cerco', 'vorrei', 'avete', 'qualcosa', 'consigli', 'consigliami', 'mio', 'mia', 'suo', 'quale', 'cosa', 'sono', 'ho', 'un\'']);
+// Sinonimi minimi per richieste generiche ("cibo", "gioco", ...).
+const SYNONYMS = {
+  cibo: ['aliment', 'crocchett', 'umid', 'mangim', 'semi', 'fieno', 'bocconcin'],
+  mangiar: ['aliment', 'crocchett', 'umid', 'mangim'],
+  pappa: ['aliment', 'crocchett', 'umid', 'mangim'],
+  gioc: ['gioc', 'ruota', 'tiragraff', 'pallin'],
+  passeggiat: ['guinzagl', 'collar', 'pettorin'],
+  casa: ['gabbi', 'cuccia', 'casett', 'lettin'],
+};
+
+function expandSynonyms(terms) {
+  const out = new Set(terms);
+  for (const t of terms) for (const s of SYNONYMS[t] || []) out.add(s);
+  return [...out];
+}
+
+const STOPWORDS = new Set(['il', 'lo', 'la', 'i', 'gli', 'le', 'un', 'una', 'uno', 'di', 'da', 'per', 'con', 'che', 'e', 'a', 'in', 'mi', 'ti', 'del', 'della', 'dei', 'delle', 'al', 'alla', 'cerco', 'vorrei', 'sotto', 'euro', 'meno', 'massimo', 'entro', 'avete', 'qualcosa', 'consigli', 'consigliami', 'mio', 'mia', 'suo', 'quale', 'cosa', 'sono', 'ho', 'un\'']);
 
 export function tokenize(text) {
   return String(text)

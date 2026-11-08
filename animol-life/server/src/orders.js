@@ -72,7 +72,7 @@ function parseCustomer(body) {
     phone: optionalString(c, 'phone', { max: 30, label: 'telefono' }),
     address: requireString(c, 'address', { min: 3, max: 200, label: 'indirizzo' }),
     city: requireString(c, 'city', { min: 2, max: 100, label: 'città' }),
-    cap: requireString(c, 'cap', { min: 5, max: 5, label: 'CAP' }),
+    cap: requireString(c, 'cap', { max: 10, label: 'CAP' }),
     province: optionalString(c, 'province', { max: 2, label: 'provincia' }),
   };
   if (!CAP_RE.test(customer.cap)) throw new ValidationError('Il CAP deve essere di 5 cifre', 'cap');

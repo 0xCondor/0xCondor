@@ -59,8 +59,9 @@ function cleanForSpeech(text) {
     .slice(0, 900);
 }
 
-const YES_RE = /\b(s[iì]|va bene|ok|okay|certo|acconsento|d'accordo|accetto)\b/i;
-const NO_RE = /\b(no|non acconsento|non voglio|preferisco di no|rifiuto)\b/i;
+// \b in JS non riconosce le lettere accentate ("sì"): usiamo confini Unicode espliciti.
+const YES_RE = /(?<![\p{L}])(s[iì]|va bene|ok|okay|certo|acconsento|d'accordo|accetto)(?![\p{L}])/iu;
+const NO_RE = /(?<![\p{L}])(no|non acconsento|non voglio|preferisco di no|rifiuto)(?![\p{L}])/iu;
 const HUMAN_RE = /\b(operator[ei]|(parlare|passa\w*|mett\w* in contatto) con (una persona|qualcuno|un umano|un essere umano)|assistenza umana)\b/i;
 const BYE_RE = /^(no,? grazie|niente(?: altro)?|nient'altro|basta(?: così)?|arrivederci|ciao|a posto così|è tutto|grazie,? è tutto)[.!]?$/i;
 
