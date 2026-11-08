@@ -109,3 +109,25 @@ describe('agente vocale Twilio (con firma e trasferimento)', () => {
     assert.equal(sig, '0/KCTR6DLpKmkAf8muzZqo1nDgQ=');
   });
 });
+
+describe('agente vocale: requisiti legali', () => {
+  test('rifiuta le chiamate in uscita (solo inbound)', async () => {
+    const t = await server();
+    const xml = await (await t.postForm('/voice/incoming', { CallSid: 'CO1', Direction: 'outbound-api' })).text();
+    assert.match(xml, /<Reject/);
+    assert.doesNotMatch(xml, /<Gather/);
+    const ok = await (await t.postForm('/voice/incoming', { CallSid: 'CI1', Direction: 'inbound' })).text();
+    assert.match(ok, /<Gather/);
+  });
+
+  test('non accetta dati di carta a voce e non li salva', async () => {
+    const t = await server();
+    await t.postForm('/voice/incoming', { CallSid: 'CC1' });
+    await t.postForm('/voice/respond?step=consent', { CallSid: 'CC1', SpeechResult: 'sì' });
+    const xml = await (await t.postForm('/voice/respond?step=chat', { CallSid: 'CC1', SpeechResult: 'il numero della carta è 4111 1111 1111 1111' })).text();
+    assert.match(xml, /non posso ricevere i dati della carta/);
+    const file = path.join(t.dataDir, 'call-transcripts.jsonl');
+    const content = await fs.readFile(file, 'utf8').catch(() => '');
+    assert.ok(!content.includes('4111'));
+  });
+});

@@ -55,7 +55,7 @@ POST /api/orders
 }
 ```
 
-I campi del cliente si possono inviare anche al primo livello del body. Eventuali prezzi o totali inviati dal client vengono **ignorati**: il server usa i prezzi del catalogo, prendendo `salePrice` se presente, altrimenti `price`, quelli della variante se indicata. Applica il coupon (ANIMOL10 -10%, CUCCIOLO5 -5%, uno per ordine), lo sconto Plus (-5%) e la spedizione: gratuita da 49 € dopo gli sconti o per i membri Plus, altrimenti 4,90 €.
+I campi del cliente si possono inviare anche al primo livello del body. Eventuali prezzi o totali inviati dal client vengono **ignorati**: il server usa i prezzi del catalogo, prendendo `salePrice` se presente, altrimenti `price`, quelli della variante se indicata. Applica il coupon (ANIMOL10 -10%, CUCCIOLO5 -5%, uno per ordine), lo sconto Plus (-5%) e la spedizione: gratuita da 49 € dopo gli sconti o per i membri Plus, altrimenti 4,90 €. Il metodo di pagamento non cambia mai il totale: il contrassegno (`paymentMethod: "cod"`) non ha supplementi, come prevede l'art. 62 del Codice del Consumo.
 
 ## Variabili d'ambiente
 
@@ -74,6 +74,7 @@ Sono tutte elencate in `.env.example`. Nessuna è obbligatoria.
 | `TWILIO_AUTH_TOKEN`, `HUMAN_PHONE_NUMBER`, `TWILIO_VOICE` | Agente vocale |
 | `EMAIL_WEBHOOK_URL`, `EMAIL_FROM`, `ALERT_EMAIL` | Invio delle email e destinatario degli avvisi interni |
 | `ABANDONED_CART_HOURS`, `LOW_STOCK_THRESHOLD` | Parametri dei job di automazione |
+| `PLUS_TRIAL_REMINDER_DAYS`, `PLUS_RENEWAL_REMINDER_DAYS` | Anticipo, in giorni, dei promemoria di fine prova (default 3) e di rinnovo annuale Plus (default 30) |
 | `LIVE_PROVIDER` | Provider delle dirette Plus (`demo`) |
 
 Le chiavi si impostano **solo** nelle variabili d'ambiente del servizio di hosting o nel file `.env`, che non va mai in git.
@@ -82,7 +83,9 @@ Le chiavi si impostano **solo** nelle variabili d'ambiente del servizio di hosti
 
 - Usa l'SDK ufficiale `@anthropic-ai/sdk` con il modello `claude-opus-5-5`, effort `low` per tenere basse latenza e costi della chat, e il fallback lato server (`fallbacks: "default"`), così una richiesta rifiutata dai filtri di sicurezza viene ritentata su un altro modello.
 - Ha a disposizione quattro strumenti: `search_products`, `get_product`, `get_policy` (spedizioni, resi, coupon, Plus, pagamenti, contatti) e `get_order_status`. Il carrello del cliente gli viene passato come contesto.
-- Dichiara di essere un'IA, come richiede l'art. 50 dell'AI Act. Non fa diagnosi veterinarie e rimanda sempre al veterinario. Non chiede dati di pagamento.
+- Dichiara di essere un'IA, come richiede l'art. 50 dell'AI Act. Quando le chiedono dell'IA rimanda alla pagina `/legal/ai-trasparenza.html`.
+- Non fa diagnosi veterinarie e rimanda sempre al veterinario. Non attribuisce agli alimenti proprietà salutistiche, cioè di prevenire, curare o trattare malattie, come vieta il Reg. CE 767/2009.
+- Non accetta mai dati di carte. Se un messaggio contiene un numero di carta (riconosciuto con il controllo di Luhn) o un CVV, viene bloccato prima di arrivare a Claude e non viene salvato.
 - La cronologia viene accorciata agli ultimi 12 messaggi da 1500 caratteri al massimo. Le richieste sono limitate per IP (20 al minuto di default).
 - Se l'API non risponde, il server passa automaticamente alla risposta deterministica.
 
@@ -97,6 +100,9 @@ Le chiavi si impostano **solo** nelle variabili d'ambiente del servizio di hosti
 
 Come funziona la chiamata:
 
+- L'agente gestisce **solo chiamate in entrata**: non effettua chiamate in uscita, promozionali o di altro tipo, e rifiuta con `<Reject>` le richieste con `Direction=outbound-*`.
+- Non accetta mai dati della carta a voce. Se il cliente li detta, l'agente lo avvisa di non farlo; quella frase non viene mandata all'IA né salvata. Il pagamento avviene solo sul sito.
+
 - All'inizio l'agente dice che è un'intelligenza artificiale e chiede il consenso a conservare la trascrizione. L'audio non viene mai registrato.
 - Se il cliente acconsente, la trascrizione testuale viene salvata in `data/call-transcripts.jsonl` con un identificativo anonimo, senza numero di telefono. Senza consenso non si salva nulla.
 - Il riconoscimento vocale usa `<Gather input="speech" language="it-IT">` e la sintesi `<Say language="it-IT">`. Le risposte arrivano dallo stesso assistente della chat, in versione breve adatta alla voce: stato dell'ordine dal numero dettato (es. "A L 2026 K 7 X..."), prodotti, spedizioni, resi e coupon.
@@ -108,7 +114,7 @@ Per una prova in locale: `npx ngrok http 3000` e poi usa l'URL di ngrok come web
 
 1. Imposta `STRIPE_SECRET_KEY` (inizia per `sk_test_` in prova, `sk_live_` in produzione).
 2. Facoltativo: crea nella dashboard un prodotto "Animol Plus" con due prezzi ricorrenti in EUR, 5,99 € al mese e 49,90 € all'anno, e imposta `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY`. Se non li imposti, i prezzi vengono creati al volo con `price_data`. La prova gratuita di 14 giorni si applica sempre.
-3. Crea il webhook (Developers → Webhooks) verso `https://<dominio>/api/stripe/webhook` con gli eventi `checkout.session.completed`, `customer.subscription.updated` e `customer.subscription.deleted`. Copia il *signing secret* in `STRIPE_WEBHOOK_SECRET`.
+3. Crea il webhook (Developers → Webhooks) verso `https://<dominio>/api/stripe/webhook` con gli eventi `checkout.session.completed`, `customer.subscription.updated` e `customer.subscription.deleted`. Il webhook salva anche la fine della prova e del periodo, che servono ai promemoria Plus. Copia il *signing secret* in `STRIPE_WEBHOOK_SECRET`.
 4. Per le prove in locale: `stripe listen --forward-to localhost:3000/api/stripe/webhook`.
 
 Dopo il pagamento Stripe rimanda a `/plus/?checkout=success`. I membri attivi o in prova ottengono automaticamente la spedizione gratuita e lo sconto del 5% sugli ordini fatti con la stessa email. La disdetta passa da un link inviato per email e, con Stripe, imposta `cancel_at_period_end`. Nota: senza account utente il riconoscimento del membro si basa sull'email dell'ordine. Per un controllo più forte serve un login o un magic link.
@@ -127,6 +133,7 @@ Senza `EMAIL_WEBHOOK_URL` le email (conferma ordine, doppio opt-in, disdetta Plu
 | `npm run job:low-stock` | Avvisa per i prodotti con scorte ≤ `LOW_STOCK_THRESHOLD`. Legge `data/inventory.json` (`{"<id>": quantità}`); se il file manca usa scorte simulate |
 | `npm run job:daily-report` | Report vendite di ieri: ordini, fatturato, scontrino medio, prodotti e categorie più venduti, coupon usati. Lo salva in `data/reports/` e lo invia ad `ALERT_EMAIL`. Accetta `--today` o `--date=AAAA-MM-GG` |
 | `npm run job:ai-content` | Genera con Claude descrizioni prodotto e post Instagram/Facebook, oppure usa dei modelli di testo se manca la chiave. Li salva come **bozze** in `data/generated/`. Accetta `--limit=5` o `--id=<prodotto>` |
+| `npm run job:plus-reminders` | Promemoria Plus via email: 3 giorni prima della fine della prova (cioè del primo addebito) e 30 giorni prima del rinnovo annuale. Ogni promemoria parte una sola volta per scadenza e mai a chi ha già disdetto |
 | `npm run jobs:all` | Esegue tutti i job |
 
 Tutti i job accettano `-- --dry-run` (es. `npm run job:daily-report -- --dry-run`), che non invia e non scrive nulla. In modalità demo non contattano servizi esterni. Esempio di crontab: `0 7 * * * cd /srv/animol-life/server && npm run job:daily-report`.
@@ -173,7 +180,7 @@ Davanti al server metti Nginx come reverse proxy, con `proxy_pass http://127.0.0
 server/
   src/          app.js (rotte), assistant.js (IA), orders.js, plus.js, newsletter.js, voice.js,
                 catalog.js, policies.js, security.js, store.js, email.js, lives.js, config.js
-  automation/   abandoned-cart.js, low-stock.js, daily-report.js, ai-content.js, run.js
+  automation/   abandoned-cart.js, low-stock.js, daily-report.js, ai-content.js, plus-reminders.js, run.js
   test/         test node:test (tutti in modalità demo, con un client Claude finto per il ciclo dei tool)
   data/         dati runtime (gitignored)
 ```

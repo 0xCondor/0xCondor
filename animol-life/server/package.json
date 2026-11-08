@@ -16,6 +16,7 @@
     "job:low-stock": "node automation/run.js low-stock",
     "job:daily-report": "node automation/run.js daily-report",
     "job:ai-content": "node automation/run.js ai-content",
+    "job:plus-reminders": "node automation/run.js plus-reminders",
     "jobs:all": "node automation/run.js all"
   },
   "dependencies": {

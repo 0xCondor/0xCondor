@@ -57,6 +57,8 @@ export function loadConfig(env = process.env, overrides = {}) {
 
     abandonedCartHours: int(env.ABANDONED_CART_HOURS, 24),
     lowStockThreshold: int(env.LOW_STOCK_THRESHOLD, 5),
+    plusTrialReminderDays: int(env.PLUS_TRIAL_REMINDER_DAYS, 3),
+    plusRenewalReminderDays: int(env.PLUS_RENEWAL_REMINDER_DAYS, 30),
 
     liveProvider: env.LIVE_PROVIDER || 'demo',
   };

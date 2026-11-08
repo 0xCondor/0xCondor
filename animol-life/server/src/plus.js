@@ -36,7 +36,11 @@ export async function subscribePlus({ cfg, stores }, body, req) {
   const stripe = await getStripe(cfg);
 
   if (!stripe) {
-    if (email) await upsertMember(stores, email, { plan, status: 'trialing', demo: true, trialEndsAt: new Date(Date.now() + PLUS.trialDays * 86_400_000).toISOString() });
+    if (email) {
+      const trialEndsAt = new Date(Date.now() + PLUS.trialDays * 86_400_000).toISOString();
+      // Il primo addebito avviene alla fine della prova.
+      await upsertMember(stores, email, { plan, status: 'trialing', demo: true, trialEndsAt, currentPeriodEnd: trialEndsAt, cancelAtPeriodEnd: false });
+    }
     return { url: `/plus/?checkout=demo&plan=${plan}`, demo: true, plan, price: PLUS[plan].label, trialDays: PLUS.trialDays };
   }
 
@@ -130,6 +134,7 @@ export async function handleStripeWebhook({ cfg, stores }, rawBody, signature) {
     if (EMAIL_RE.test(email)) {
       await upsertMember(stores, email, {
         plan: obj.metadata?.plan || null, status: 'trialing', stripeCustomerId: obj.customer, stripeSubscriptionId: obj.subscription,
+        trialEndsAt: new Date(Date.now() + PLUS.trialDays * 86_400_000).toISOString(), cancelAtPeriodEnd: false,
       });
     }
   } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
@@ -138,6 +143,13 @@ export async function handleStripeWebhook({ cfg, stores }, rawBody, signature) {
       if (m) {
         m.status = event.type.endsWith('deleted') ? 'canceled' : obj.status;
         m.cancelAtPeriodEnd = Boolean(obj.cancel_at_period_end);
+        const toIso = (sec) => (sec ? new Date(sec * 1000).toISOString() : null);
+        if (obj.trial_end) m.trialEndsAt = toIso(obj.trial_end);
+        // current_period_end è sulla subscription (API meno recenti) o sui suoi item (API recenti).
+        const periodEnd = obj.current_period_end ?? obj.items?.data?.[0]?.current_period_end;
+        if (periodEnd) m.currentPeriodEnd = toIso(periodEnd);
+        const interval = obj.items?.data?.[0]?.price?.recurring?.interval;
+        if (interval) m.plan = interval === 'year' ? 'yearly' : 'monthly';
         m.updatedAt = new Date().toISOString();
       }
     });

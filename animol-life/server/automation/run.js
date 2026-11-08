@@ -6,12 +6,14 @@ import { runAbandonedCart } from './abandoned-cart.js';
 import { runLowStock } from './low-stock.js';
 import { runDailyReport } from './daily-report.js';
 import { runAiContent } from './ai-content.js';
+import { runPlusReminders } from './plus-reminders.js';
 
 export const JOBS = {
   'abandoned-cart': runAbandonedCart,
   'low-stock': runLowStock,
   'daily-report': runDailyReport,
   'ai-content': runAiContent,
+  'plus-reminders': runPlusReminders,
 };
 
 async function main() {

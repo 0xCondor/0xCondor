@@ -24,7 +24,7 @@ export const POLICIES = {
   plus:
     'Animol Plus costa 5,99 €/mese oppure 49,90 €/anno, con 14 giorni di prova gratuita. Include spedizione sempre gratuita, ' +
     'uno sconto extra del 5% su ogni ordine e l\'accesso alle dirette private con esperti. Si può disdire in qualsiasi momento.',
-  payment: 'Pagamenti con carta, PayPal o contrassegno (dove disponibile). I prezzi includono l\'IVA.',
+  payment: 'Pagamenti con carta, PayPal o contrassegno (dove disponibile), senza alcun costo aggiuntivo per il contrassegno. I prezzi includono l\'IVA.',
   contact: 'Assistenza umana: dal lunedì al venerdì 9-18, via email o telefono (chiedi di parlare con un operatore).',
 };
 
@@ -33,6 +33,9 @@ export function formatEuro(cents) {
 }
 
 /**
+ * Nessun supplemento per il metodo di pagamento (contrassegno incluso): vietato dall'art. 62 Cod. Consumo.
+ * Per questo computeTotals non riceve né considera il metodo di pagamento.
+ *
  * Calcola i totali in centesimi. Gli sconti (coupon + Plus) si applicano al subtotale prodotti;
  * la spedizione è gratuita sopra soglia (dopo gli sconti) o per i membri Plus.
  */

@@ -92,3 +92,27 @@ test('ai-content con Claude (client finto) usa output JSON strutturato', async (
   assert.deepEqual(out.items.map((i) => i.id), ['fieno-coniglio-1kg']);
   assert.equal(params.output_config.format.type, 'json_schema');
 });
+
+test('promemoria Plus: fine prova (3 giorni prima) e rinnovo annuale, una sola volta', async () => {
+  const { runPlusReminders } = await import('../automation/plus-reminders.js');
+  const t = await startTestServer();
+  servers.push(t);
+  const ctx = createContext({ cfg: t.cfg, log: () => {} });
+  const inDays = (d) => new Date(Date.now() + d * 86_400_000).toISOString();
+  await ctx.stores.plus.write({
+    tokens: [],
+    members: [
+      { email: 'trial@example.it', plan: 'monthly', status: 'trialing', trialEndsAt: inDays(2), currentPeriodEnd: inDays(2) },
+      { email: 'trial-far@example.it', plan: 'monthly', status: 'trialing', trialEndsAt: inDays(10) },
+      { email: 'year@example.it', plan: 'yearly', status: 'active', currentPeriodEnd: inDays(20) },
+      { email: 'month@example.it', plan: 'monthly', status: 'active', currentPeriodEnd: inDays(5) },
+      { email: 'gone@example.it', plan: 'yearly', status: 'active', currentPeriodEnd: inDays(5), cancelAtPeriodEnd: true },
+    ],
+  });
+  const r = await runPlusReminders(ctx, {});
+  assert.deepEqual({ trial: r.trial, renewal: r.renewal }, { trial: 1, renewal: 1 });
+  assert.ok(outbox.some((m) => m.tag === 'plus-trial-ending' && m.to === 'trial@example.it' && /5,99/.test(m.text)));
+  assert.ok(outbox.some((m) => m.tag === 'plus-annual-renewal' && m.to === 'year@example.it' && /49,90/.test(m.text)));
+  const again = await runPlusReminders(ctx, {});
+  assert.deepEqual({ trial: again.trial, renewal: again.renewal }, { trial: 0, renewal: 0 });
+});

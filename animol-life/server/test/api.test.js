@@ -257,3 +257,25 @@ describe('Animol Plus', () => {
     assert.equal(res.status, 503);
   });
 });
+
+describe('requisiti legali', () => {
+  test('contrassegno senza supplemento (art. 62 Cod. Consumo)', async () => {
+    const items = [{ id: 'fieno-coniglio-1kg', qty: 1 }];
+    const card = await (await t.post('/api/orders', { customer: CUSTOMER, items, paymentMethod: 'card' })).json();
+    const cod = await (await t.post('/api/orders', { customer: CUSTOMER, items, paymentMethod: 'cod' })).json();
+    assert.equal(cod.total, card.total);
+    assert.equal(cod.total, 9.8);
+  });
+
+  test('domande sull\'IA: link alla pagina di trasparenza', async () => {
+    const body = await (await t.post('/api/assistant', {
+      messages: [{ role: 'user', content: 'ciao' }, { role: 'assistant', content: 'Ciao!' }, { role: 'user', content: 'Sei un\'intelligenza artificiale?' }],
+    })).json();
+    assert.match(body.reply, /\/legal\/ai-trasparenza\.html/);
+  });
+
+  test('mai dati di carta in chat', async () => {
+    const body = await (await t.post('/api/assistant', { messages: [{ role: 'user', content: 'pago con questa: 4111 1111 1111 1111 scad 12/28' }] })).json();
+    assert.match(body.reply, /non condividere mai i dati della carta/);
+  });
+});

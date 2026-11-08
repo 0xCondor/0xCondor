@@ -4,6 +4,10 @@
 // - offre il trasferimento a un operatore umano (HUMAN_PHONE_NUMBER)
 import crypto from 'node:crypto';
 import { appendJsonLine } from './store.js';
+import { containsCardData } from './assistant.js';
+
+// Solo chiamate in entrata: questo agente non effettua mai chiamate in uscita (né promozionali né di altro tipo)
+// e non accetta mai dati di carte di pagamento a voce.
 
 const SESSION_TTL_MS = 60 * 60 * 1000;
 const MAX_SESSIONS = 2000;
@@ -104,9 +108,13 @@ export function createVoiceAgent({ cfg, assistant }) {
     return gather(say('Al momento non posso trasferirti a un operatore. Il servizio clienti risponde dal lunedì al venerdì dalle 9 alle 18, anche via email. Posso aiutarti in altro?'));
   }
 
+  const isOutbound = (req) => /^outbound/i.test(String(req.body?.Direction || ''));
+  const rejectOutbound = () => twiml('<Reject reason="rejected"/>');
+
   return {
     sessions,
     incoming(req) {
+      if (isOutbound(req)) return rejectOutbound();
       const sid = req.body?.CallSid || `anon-${Date.now()}`;
       sessions.delete(sid);
       session(sid);
@@ -118,6 +126,7 @@ export function createVoiceAgent({ cfg, assistant }) {
     },
 
     async respond(req) {
+      if (isOutbound(req)) return rejectOutbound();
       const sid = req.body?.CallSid || 'anon';
       const s = session(sid);
       const step = req.query.step === 'consent' ? 'consent' : 'chat';
@@ -132,6 +141,11 @@ export function createVoiceAgent({ cfg, assistant }) {
         }
         s.misses = 0;
 
+        if (containsCardData(speech)) {
+          // Nessun salvataggio e nessun invio all'IA di quanto detto.
+          return twiml(gather(say('Per la tua sicurezza non posso ricevere i dati della carta al telefono: non dettarli. Il pagamento si fa solo nel checkout sicuro del sito. Posso aiutarti in altro?')));
+        }
+
         if (HUMAN_RE.test(speech)) return twiml(transfer());
 
         if (step === 'consent' && s.consent === null) {
@@ -142,7 +156,7 @@ export function createVoiceAgent({ cfg, assistant }) {
             s.consent = yes;
             return twiml(gather(say(
               `${yes ? 'Grazie, conserveremo la trascrizione solo per migliorare il servizio.' : 'Va bene, non conserveremo nulla di questa chiamata.'} ` +
-              'Come posso aiutarti? Puoi chiedermi lo stato di un ordine, informazioni su prodotti, spedizioni, resi o coupon.',
+              'Non ti chiederò mai i dati della carta. Come posso aiutarti? Puoi chiedermi lo stato di un ordine, informazioni su prodotti, spedizioni, resi o coupon.',
             )));
           }
           s.consent = false; // nessuna risposta chiara: nessun consenso, rispondiamo direttamente alla domanda

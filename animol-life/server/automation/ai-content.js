@@ -36,7 +36,7 @@ Per ogni prodotto JSON fornito scrivi in italiano:
 - "instagram": post Instagram (max 300 caratteri) con una call to action;
 - "facebook": post Facebook (max 500 caratteri);
 - "hashtags": 4-6 hashtag pertinenti in italiano.
-Vincoli: non inventare caratteristiche, certificazioni o benefici non presenti nei dati; nessuna promessa terapeutica o sanitaria (non è un farmaco); niente superlativi assoluti non verificabili ("il migliore"); se citi uno sconto indica che il prezzo più basso degli ultimi 30 giorni è disponibile in scheda. Mantieni l'id del prodotto invariato.`;
+Vincoli: non inventare caratteristiche, certificazioni o benefici non presenti nei dati; nessuna indicazione sulla salute per alimenti e snack (Reg. CE 767/2009: un mangime non può dichiarare di prevenire, trattare o curare malattie) e nessuna promessa terapeutica; niente superlativi assoluti non verificabili ("il migliore"); se citi uno sconto indica che il prezzo più basso degli ultimi 30 giorni è disponibile in scheda. Mantieni l'id del prodotto invariato.`;
 
 function templateContent(p) {
   const price = formatEuro(Math.round(effectivePrice(p) * 100));
