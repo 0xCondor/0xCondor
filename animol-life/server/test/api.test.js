@@ -222,15 +222,36 @@ describe('Animol Plus', () => {
     assert.equal((await t.post('/api/plus/subscribe', { plan: 'weekly' })).status, 400);
   });
 
-  test('membro Plus: spedizione gratuita e -5% sugli ordini, poi disdetta via link email', async () => {
+  test('membro Plus demo: spedizione gratuita e -5%, disdetta immediata in demo', async () => {
+    const email = 'plusdemo@example.it';
+    await t.post('/api/plus/subscribe', { plan: 'yearly', email });
+    const order = await (await t.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
+    assert.equal(order.plusApplied, true);
+    assert.equal(order.total, 9.31);
+    const res = await t.post('/api/plus/cancel', { email });
+    assert.equal(res.status, 202);
+    const body = await res.json();
+    assert.equal(body.canceled, true);
+    const after = await (await t.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
+    assert.equal(after.plusApplied, false);
+    assert.equal(after.total, 14.7); // 9,80 + 4,90
+  });
+
+  test('membro Plus (non demo): spedizione gratuita e -5% sugli ordini, poi disdetta via link email', async () => {
     const email = 'plus@example.it';
     await t.post('/api/plus/subscribe', { plan: 'monthly', email });
+    // simula un membro reale (es. arrivato dal webhook Stripe): la disdetta richiede il link via email
+    const pf = path.join(t.dataDir, 'plus.json');
+    const pdata = JSON.parse(await fs.readFile(pf, 'utf8'));
+    pdata.members.find((m) => m.email === email).demo = false;
+    await fs.writeFile(pf, JSON.stringify(pdata));
     const order = await (await t.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
     assert.equal(order.shipping, 0);
     assert.equal(order.total, 9.31); // 9,80 - 5%
 
     const res = await t.post('/api/plus/cancel', { email });
     assert.equal(res.status, 202);
+    assert.equal((await res.json()).canceled, undefined);
     const mail = outbox.findLast((m) => m.tag === 'plus-cancel');
     const link = new URL(mail.text.match(/https?:\/\/\S+/)[0]);
     assert.equal((await t.get(link.pathname + link.search)).status, 200);
@@ -255,6 +276,75 @@ describe('Animol Plus', () => {
   test('webhook Stripe senza configurazione -> 503', async () => {
     const res = await t.post('/api/stripe/webhook', '{}');
     assert.equal(res.status, 503);
+  });
+});
+
+describe('metodi di spedizione (allineati alla pagina)', () => {
+  const small = [{ id: 'fieno-coniglio-1kg', qty: 1 }]; // 4,90
+  const big = [{ id: 'crocchette-cane-adulto-salmone', variant: '12 kg', qty: 2 }]; // 69,80
+  const order = async (items, extra = {}, email = 'ship@example.it') => t.post('/api/orders', { customer: { ...CUSTOMER, email }, items, ...extra });
+
+  test('standard, express e point sotto e sopra soglia', async () => {
+    const cases = [
+      [small, 'standard', 4.9, 9.8], [small, 'express', 9.9, 14.8], [small, 'point', 2.9, 7.8],
+      [big, 'standard', 0, 69.8], [big, 'express', 9.9, 79.7], [big, 'point', 0, 69.8],
+    ];
+    for (const [items, shippingMethod, ship, total] of cases) {
+      const b = await (await order(items, { shippingMethod })).json();
+      assert.equal(b.shippingMethod, shippingMethod);
+      assert.equal(b.shipping, ship, shippingMethod);
+      assert.equal(b.total, total, shippingMethod);
+    }
+    const def = await (await order(small)).json();
+    assert.equal(def.shippingMethod, 'standard');
+    const nested = await (await order(small, { shipping: { method: 'point' } })).json();
+    assert.equal(nested.shipping, 2.9);
+  });
+
+  test('soglia calcolata dopo gli sconti; metodo non valido -> 400', async () => {
+    // 5 x 9,90 = 49,50 -> con ANIMOL10 44,55: sotto soglia anche se il subtotale supera 49 €
+    const b = await (await order([{ id: 'umido-gatto-tonno-12x85', qty: 5 }], { coupon: 'ANIMOL10', shippingMethod: 'point' })).json();
+    assert.equal(b.subtotal, 49.5);
+    assert.equal(b.shipping, 2.9); // 44,55 dopo il coupon
+    assert.equal(b.total, 47.45);
+    const bad = await order(small, { shippingMethod: 'drone' });
+    assert.equal(bad.status, 400);
+    assert.equal((await bad.json()).field, 'shippingMethod');
+  });
+
+  test('Plus: standard e point gratis, express sempre 9,90; coupon e Plus sul subtotale', async () => {
+    const email = 'plusship@example.it';
+    await t.post('/api/plus/subscribe', { plan: 'monthly', email });
+    const std = await (await order(small, { shippingMethod: 'standard' }, email)).json();
+    const pt = await (await order(small, { shippingMethod: 'point' }, email)).json();
+    const ex = await (await order(small, { shippingMethod: 'express' }, email)).json();
+    assert.deepEqual([std.shipping, pt.shipping, ex.shipping], [0, 0, 9.9]);
+    assert.equal(ex.total, 14.55); // 4,90 - 0,25 + 9,90
+    const both = await (await order([{ id: 'umido-gatto-tonno-12x85', qty: 10 }], { coupon: 'CUCCIOLO5' }, email)).json();
+    assert.equal(both.discount, 9.9); // 5% + 5% di 99,00
+    assert.equal(both.total, 89.1);
+  });
+
+  test('contrassegno: mai supplementi con ogni spedizione, massimo 500 €', async () => {
+    for (const shippingMethod of ['standard', 'express', 'point']) {
+      const card = await (await order(small, { shippingMethod, paymentMethod: 'card' })).json();
+      const paypal = await (await order(small, { shippingMethod, paymentMethod: 'paypal' })).json();
+      const cod = await (await order(small, { shippingMethod, paymentMethod: 'cod' })).json();
+      assert.equal(cod.total, card.total);
+      assert.equal(paypal.total, card.total);
+      assert.equal(cod.paymentMethod, 'cod');
+    }
+    const many = [{ id: 'gabbia-criceto-deluxe', qty: 2 }, { id: 'crocchette-cane-adulto-salmone', variant: '12 kg', qty: 20 }]; // 787,80
+    const res = await order(many, { paymentMethod: 'cod' });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).field, 'paymentMethod');
+    assert.equal((await order(many, { paymentMethod: 'card' })).status, 201);
+  });
+
+  test('quote con shippingMethod', async () => {
+    const q = await (await t.post('/api/cart/quote', { items: small, shippingMethod: 'express' })).json();
+    assert.equal(q.shipping, 9.9);
+    assert.equal(q.total, 14.8);
   });
 });
 

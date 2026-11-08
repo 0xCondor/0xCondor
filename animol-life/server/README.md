@@ -27,15 +27,15 @@ I dati (ordini, iscritti newsletter, membri Plus, carrelli, report, trascrizioni
 |---|---|---|
 | GET | `/api/health` | Stato del server, catalogo e integrazioni attive |
 | POST | `/api/assistant` | `{messages:[{role,content}], cart:[{id,variant,qty}]}` → `{reply, products?}` |
-| POST | `/api/orders` | Crea l'ordine e ricalcola i totali sul server → `{orderId:"AL-AAAA-XXXXXX", total, subtotal, discount, shipping}` |
+| POST | `/api/orders` | Crea l'ordine e ricalcola i totali sul server → `{orderId:"AL-AAAA-XXXXXX", total, subtotal, discount, shipping, shippingMethod, paymentMethod, plusApplied}` |
 | POST | `/api/order-status` | `{orderId, email?}` → stato. I dettagli dell'ordine arrivano solo se l'email (o il CAP) corrisponde |
-| POST | `/api/cart/quote` | Anteprima dei totali, senza salvare nulla (facoltativo) |
+| POST | `/api/cart/quote` | `{items, coupon?, shippingMethod?}`: anteprima dei totali, senza salvare nulla (facoltativo) |
 | POST | `/api/carts` | `{email, consent:true, items}`: salva il carrello per il promemoria (facoltativo) |
 | POST | `/api/newsletter` | `{email, consent:true}`: doppio opt-in, invia il link di conferma |
 | GET | `/api/newsletter/confirm?token=` | Conferma l'iscrizione |
 | GET | `/api/newsletter/unsubscribe?token=` | Disiscrizione e cancellazione dei dati |
 | POST | `/api/plus/subscribe` | `{plan:"monthly"\|"yearly", email?}` → `{url}` (Stripe Checkout oppure URL demo) |
-| POST | `/api/plus/cancel` | `{email}`: invia per email il link per confermare la disdetta |
+| POST | `/api/plus/cancel` | `{email}`: invia per email il link per confermare la disdetta. In demo (senza Stripe) i membri creati dalla demo vengono disdetti subito → `{ok, canceled:true}` |
 | GET | `/api/plus/cancel/confirm?token=` | Conferma la disdetta |
 | GET | `/api/plus/lives` | `{provider, lives:[{id,title,host,startsAt,topic,productIds,...}]}` |
 | POST | `/api/stripe/webhook` | Webhook Stripe (firma verificata) |
@@ -51,11 +51,20 @@ POST /api/orders
                 "address": "Via Roma 1", "city": "Milano", "cap": "20121", "province": "MI" },
   "items": [ { "id": "crocchette-cane-adulto-salmone", "variant": "12 kg", "qty": 1 } ],
   "coupon": "ANIMOL10",
+  "shippingMethod": "standard",
   "paymentMethod": "card"
 }
 ```
 
-I campi del cliente si possono inviare anche al primo livello del body. Eventuali prezzi o totali inviati dal client vengono **ignorati**: il server usa i prezzi del catalogo, prendendo `salePrice` se presente, altrimenti `price`, quelli della variante se indicata. Applica il coupon (ANIMOL10 -10%, CUCCIOLO5 -5%, uno per ordine), lo sconto Plus (-5%) e la spedizione: gratuita da 49 € dopo gli sconti o per i membri Plus, altrimenti 4,90 €. Il metodo di pagamento non cambia mai il totale: il contrassegno (`paymentMethod: "cod"`) non ha supplementi, come prevede l'art. 62 del Codice del Consumo.
+I campi del cliente si possono inviare anche al primo livello del body. Eventuali prezzi o totali inviati dal client vengono **ignorati**: il server usa i prezzi del catalogo, prendendo `salePrice` se presente, altrimenti `price`, quelli della variante se indicata. Applica il coupon (ANIMOL10 -10%, CUCCIOLO5 -5%, uno per ordine) e lo sconto Plus (-5%), entrambi calcolati sul subtotale, e la spedizione scelta con `shippingMethod` (stessi prezzi della pagina, default `standard`; valori diversi → 400):
+
+| `shippingMethod` | Costo | Gratuita |
+|---|---|---|
+| `standard` | 4,90 € | da 49 € dopo gli sconti, o per i membri Plus |
+| `express` | 9,90 € | mai |
+| `point` (Animol Point) | 2,90 € | da 49 € dopo gli sconti, o per i membri Plus |
+
+Il metodo di pagamento non cambia mai il totale: il contrassegno (`paymentMethod: "cod"`) non ha supplementi, come prevede l'art. 62 del Codice del Consumo, ed è accettato fino a 500 €. La risposta indica con `plusApplied` se l'email dell'ordine corrisponde a un membro Plus: la pagina mostra sempre il totale del server.
 
 ## Variabili d'ambiente
 
@@ -117,7 +126,7 @@ Per una prova in locale: `npx ngrok http 3000` e poi usa l'URL di ngrok come web
 3. Crea il webhook (Developers → Webhooks) verso `https://<dominio>/api/stripe/webhook` con gli eventi `checkout.session.completed`, `customer.subscription.updated` e `customer.subscription.deleted`. Il webhook salva anche la fine della prova e del periodo, che servono ai promemoria Plus. Copia il *signing secret* in `STRIPE_WEBHOOK_SECRET`.
 4. Per le prove in locale: `stripe listen --forward-to localhost:3000/api/stripe/webhook`.
 
-Dopo il pagamento Stripe rimanda a `/plus/?checkout=success`. I membri attivi o in prova ottengono automaticamente la spedizione gratuita e lo sconto del 5% sugli ordini fatti con la stessa email. La disdetta passa da un link inviato per email e, con Stripe, imposta `cancel_at_period_end`. Nota: senza account utente il riconoscimento del membro si basa sull'email dell'ordine. Per un controllo più forte serve un login o un magic link.
+Dalla pagina, l'attivazione chiede l'email e chiama `/api/plus/subscribe` con `{plan, email}`: in demo il server registra subito l'email come membro in prova e la pagina attiva i vantaggi; al checkout la pagina precompila la stessa email. Dopo il pagamento Stripe rimanda a `/plus/?checkout=success`, che reindirizza a `/?checkout=success#plus` mantenendo i parametri. I membri attivi o in prova ottengono automaticamente la spedizione gratuita e lo sconto del 5% sugli ordini fatti con la stessa email. La disdetta passa da un link inviato per email e, con Stripe, imposta `cancel_at_period_end`. Nota: senza account utente il riconoscimento del membro si basa sull'email dell'ordine. Per un controllo più forte serve un login o un magic link.
 
 Le dirette private (`/api/plus/lives`) usano per ora dati di esempio. `src/lives.js` definisce un adapter con `listUpcoming()` e `createJoinToken()`: per LiveKit o Daily basta aggiungere un adapter che legga le stanze programmate e generi i token di accesso solo per i membri Plus.
 

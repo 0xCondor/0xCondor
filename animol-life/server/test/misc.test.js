@@ -116,3 +116,19 @@ test('promemoria Plus: fine prova (3 giorni prima) e rinnovo annuale, una sola v
   const again = await runPlusReminders(ctx, {});
   assert.deepEqual({ trial: again.trial, renewal: again.renewal }, { trial: 0, renewal: 0 });
 });
+
+test('catalogo reale: public/products.json (24 prodotti) coincide con il catalogo incorporato in index.html', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { fileURLToPath } = await import('node:url');
+  const pub = fileURLToPath(new URL('../../public/', import.meta.url));
+  const products = JSON.parse(await readFile(pub + 'products.json', 'utf8'));
+  const html = await readFile(pub + 'index.html', 'utf8');
+  const embedded = JSON.parse(html.match(/<script[^>]*id="catalog-data"[^>]*>([\s\S]*?)<\/script>/)[1]);
+  assert.equal(products.length, 24);
+  const key = (p) => JSON.stringify([p.id, p.category, p.price, p.salePrice ?? null, (p.variants || []).map((v) => [v.label, v.price, v.salePrice ?? null])]);
+  assert.deepEqual(embedded.map(key), products.map(key));
+  const { Catalog } = await import('../src/catalog.js');
+  const cat = new Catalog(pub);
+  assert.equal((await cat.all()).length, 24);
+  assert.equal(cat.source, 'products.json');
+});
