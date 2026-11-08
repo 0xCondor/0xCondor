@@ -1,0 +1,648 @@
+[
+  {
+    "id": "cani-crocchette-adult-agnello",
+    "name": "Crocchette Adult Agnello e Riso",
+    "brand": "NaturaFido",
+    "category": "cani",
+    "price": 18.9,
+    "salePrice": 16.9,
+    "lowestPrice30d": 18.9,
+    "rating": 4.7,
+    "reviews": 1284,
+    "sold": 9820,
+    "description": "Alimento completo per cani adulti di taglia media e grande. Agnello fresco come prima fonte proteica, riso facilmente digeribile e olio di salmone per un manto lucido. Senza coloranti né conservanti artificiali.",
+    "specs": {
+      "Età": "Adulto (1-7 anni)",
+      "Taglia": "Media e grande",
+      "Proteine grezze": "26%",
+      "Grassi grezzi": "15%",
+      "Fibra grezza": "2,5%",
+      "Ingrediente principale": "Agnello fresco (28%)",
+      "Cereali": "Riso integrale",
+      "Origine": "Prodotto in Italia"
+    },
+    "variants": [
+      {
+        "label": "3 kg",
+        "price": 18.9,
+        "salePrice": 16.9,
+        "lowestPrice30d": 18.9
+      },
+      {
+        "label": "7 kg",
+        "price": 38.9,
+        "salePrice": 33.9,
+        "lowestPrice30d": 38.9
+      },
+      {
+        "label": "12 kg",
+        "price": 59.9,
+        "salePrice": 49.9,
+        "lowestPrice30d": 57.9
+      }
+    ]
+  },
+  {
+    "id": "cani-crocchette-puppy-pollo",
+    "name": "Crocchette Puppy Pollo e Patate",
+    "brand": "Vitalcroc",
+    "category": "cani",
+    "price": 21.5,
+    "salePrice": null,
+    "lowestPrice30d": 21.5,
+    "rating": 4.8,
+    "reviews": 742,
+    "sold": 6110,
+    "description": "Formula grain free per cuccioli fino a 12 mesi, con pollo fresco, patate e DHA per lo sviluppo cognitivo. Crocchetta piccola, adatta anche alle razze mini.",
+    "specs": {
+      "Età": "Cucciolo (2-12 mesi)",
+      "Taglia": "Tutte",
+      "Proteine grezze": "30%",
+      "Grassi grezzi": "18%",
+      "Fibra grezza": "2,2%",
+      "Ingrediente principale": "Pollo fresco (34%)",
+      "Cereali": "Senza cereali",
+      "Origine": "Prodotto in Italia"
+    },
+    "variants": [
+      {
+        "label": "3 kg",
+        "price": 21.5,
+        "salePrice": null,
+        "lowestPrice30d": 21.5
+      },
+      {
+        "label": "7 kg",
+        "price": 44.9,
+        "salePrice": 39.9,
+        "lowestPrice30d": 44.9
+      },
+      {
+        "label": "12 kg",
+        "price": 69.9,
+        "salePrice": 62.9,
+        "lowestPrice30d": 69.9
+      }
+    ]
+  },
+  {
+    "id": "cani-umido-manzo-carote",
+    "name": "Bocconcini Umido Manzo e Carote 12×400 g",
+    "brand": "NaturaFido",
+    "category": "cani",
+    "price": 27.9,
+    "salePrice": 23.9,
+    "lowestPrice30d": 26.9,
+    "rating": 4.6,
+    "reviews": 518,
+    "sold": 4380,
+    "description": "Tenerissimi bocconcini in salsa con manzo italiano e carote. Confezione risparmio da 12 lattine, ideali da soli o abbinati alle crocchette.",
+    "specs": {
+      "Formato": "12 lattine da 400 g",
+      "Età": "Adulto",
+      "Proteine grezze": "9%",
+      "Umidità": "80%",
+      "Ingrediente principale": "Manzo (45%)",
+      "Conservanti": "Nessuno",
+      "Origine": "Prodotto in Italia"
+    },
+    "variants": []
+  },
+  {
+    "id": "cani-stick-dentali-medium",
+    "name": "Stick Dentali Medium 28 pz",
+    "brand": "Vitalcroc",
+    "category": "cani",
+    "price": 12.9,
+    "salePrice": null,
+    "lowestPrice30d": 12.9,
+    "rating": 4.5,
+    "reviews": 2210,
+    "sold": 11240,
+    "description": "Snack masticabili a forma di stella che aiutano a ridurre placca e tartaro. Con estratto di tè verde e menta per un alito più fresco. Uno al giorno.",
+    "specs": {
+      "Contenuto": "28 stick (4 settimane)",
+      "Taglia": "Cani da 10 a 25 kg",
+      "Calorie": "78 kcal/stick",
+      "Senza": "Zuccheri aggiunti",
+      "Origine": "Prodotto in UE"
+    },
+    "variants": []
+  },
+  {
+    "id": "cani-cuccia-memory-foam",
+    "name": "Cuccia Ortopedica Memory Foam",
+    "brand": "Cuccia&Co",
+    "category": "cani",
+    "price": 49.9,
+    "salePrice": null,
+    "lowestPrice30d": 49.9,
+    "rating": 4.8,
+    "reviews": 389,
+    "sold": 2140,
+    "description": "Materasso in memory foam ad alta densità con bordo cuscinato su tre lati. Fodera sfoderabile e lavabile a 30 °C, fondo antiscivolo impermeabile. Ideale per cani anziani.",
+    "specs": {
+      "Imbottitura": "Memory foam 8 cm",
+      "Fodera": "Velluto a coste, sfoderabile",
+      "Lavaggio": "30 °C in lavatrice",
+      "Fondo": "Antiscivolo e impermeabile",
+      "Misure M / L / XL": "70×55 / 90×70 / 110×85 cm"
+    },
+    "variants": [
+      {
+        "label": "M",
+        "price": 49.9,
+        "salePrice": null,
+        "lowestPrice30d": 49.9
+      },
+      {
+        "label": "L",
+        "price": 69.9,
+        "salePrice": 59.9,
+        "lowestPrice30d": 69.9
+      },
+      {
+        "label": "XL",
+        "price": 89.9,
+        "salePrice": 79.9,
+        "lowestPrice30d": 89.9
+      }
+    ]
+  },
+  {
+    "id": "cani-guinzaglio-riflettente",
+    "name": "Guinzaglio Riflettente 1,5 m",
+    "brand": "Cuccia&Co",
+    "category": "cani",
+    "price": 14.9,
+    "salePrice": 11.9,
+    "lowestPrice30d": 14.9,
+    "rating": 4.4,
+    "reviews": 631,
+    "sold": 3570,
+    "description": "Guinzaglio in nylon intrecciato con cuciture riflettenti per le passeggiate serali. Impugnatura imbottita in neoprene e moschettone girevole in alluminio.",
+    "specs": {
+      "Lunghezza": "150 cm",
+      "Larghezza": "2 cm",
+      "Materiale": "Nylon con inserti riflettenti",
+      "Moschettone": "Alluminio, girevole 360°",
+      "Carico massimo": "40 kg"
+    },
+    "variants": []
+  },
+  {
+    "id": "gatti-crocchette-sterilizzato-salmone",
+    "name": "Crocchette Sterilizzato Salmone",
+    "brand": "Felinia",
+    "category": "gatti",
+    "price": 15.9,
+    "salePrice": null,
+    "lowestPrice30d": 15.9,
+    "rating": 4.7,
+    "reviews": 1630,
+    "sold": 10350,
+    "description": "Per gatti sterilizzati: ridotto contenuto di grassi, L-carnitina per il controllo del peso e mirtillo rosso per il benessere delle vie urinarie. Salmone come prima fonte proteica.",
+    "specs": {
+      "Età": "Adulto sterilizzato",
+      "Proteine grezze": "34%",
+      "Grassi grezzi": "11%",
+      "Fibra grezza": "4%",
+      "Ingrediente principale": "Salmone (30%)",
+      "Benessere urinario": "Sì, con mirtillo rosso",
+      "Origine": "Prodotto in Italia"
+    },
+    "variants": [
+      {
+        "label": "1,5 kg",
+        "price": 15.9,
+        "salePrice": null,
+        "lowestPrice30d": 15.9
+      },
+      {
+        "label": "4 kg",
+        "price": 34.9,
+        "salePrice": 29.9,
+        "lowestPrice30d": 34.9
+      },
+      {
+        "label": "10 kg",
+        "price": 69.9,
+        "salePrice": 62.9,
+        "lowestPrice30d": 66.9
+      }
+    ]
+  },
+  {
+    "id": "gatti-pate-delicato-mix",
+    "name": "Patè Delicato Mix 24×85 g",
+    "brand": "Felinia",
+    "category": "gatti",
+    "price": 22.9,
+    "salePrice": 19.9,
+    "lowestPrice30d": 22.9,
+    "rating": 4.6,
+    "reviews": 954,
+    "sold": 7420,
+    "description": "Assortimento di patè morbidissimi in vaschetta: pollo, tonno, manzo e salmone. Senza zuccheri aggiunti, con taurina e vitamine.",
+    "specs": {
+      "Formato": "24 vaschette da 85 g",
+      "Gusti": "Pollo, tonno, manzo, salmone",
+      "Età": "Adulto",
+      "Proteine grezze": "11%",
+      "Umidità": "81%",
+      "Origine": "Prodotto in UE"
+    },
+    "variants": []
+  },
+  {
+    "id": "gatti-lettiera-agglomerante-vegetale",
+    "name": "Lettiera Agglomerante Vegetale",
+    "brand": "Alpestre Pet",
+    "category": "gatti",
+    "price": 9.9,
+    "salePrice": null,
+    "lowestPrice30d": 9.9,
+    "rating": 4.5,
+    "reviews": 1102,
+    "sold": 8930,
+    "description": "Lettiera 100% vegetale da fibre di mais e piselli: forma grumi compatti, trattiene gli odori ed è smaltibile nell'organico (verifica le regole del tuo Comune).",
+    "specs": {
+      "Materiale": "Fibre vegetali di mais e piselli",
+      "Agglomerante": "Sì",
+      "Profumazione": "Neutra",
+      "Smaltimento": "Organico / WC in piccole quantità",
+      "Durata stimata 10 L": "Circa 4 settimane per 1 gatto"
+    },
+    "variants": [
+      {
+        "label": "6 L",
+        "price": 9.9,
+        "salePrice": null,
+        "lowestPrice30d": 9.9
+      },
+      {
+        "label": "10 L",
+        "price": 14.9,
+        "salePrice": 12.9,
+        "lowestPrice30d": 14.9
+      },
+      {
+        "label": "20 L",
+        "price": 26.9,
+        "salePrice": 22.9,
+        "lowestPrice30d": 26.9
+      }
+    ]
+  },
+  {
+    "id": "gatti-tiragraffi-torre-120",
+    "name": "Tiragraffi a Torre 120 cm",
+    "brand": "Cuccia&Co",
+    "category": "gatti",
+    "price": 79.9,
+    "salePrice": 64.9,
+    "lowestPrice30d": 74.9,
+    "rating": 4.7,
+    "reviews": 457,
+    "sold": 1980,
+    "description": "Albero per gatti con 4 piani, cuccetta chiusa, amaca e pali rivestiti in sisal naturale. Base stabile e kit di fissaggio a parete incluso.",
+    "specs": {
+      "Altezza": "120 cm",
+      "Base": "50×50 cm",
+      "Pali": "Sisal naturale Ø 9 cm",
+      "Accessori": "Cuccetta, amaca, pallina pendente",
+      "Peso massimo per piano": "8 kg"
+    },
+    "variants": []
+  },
+  {
+    "id": "gatti-fontanella-filtrante-2l",
+    "name": "Fontanella Filtrante 2 L",
+    "brand": "Alpestre Pet",
+    "category": "gatti",
+    "price": 34.9,
+    "salePrice": null,
+    "lowestPrice30d": 34.9,
+    "rating": 4.5,
+    "reviews": 826,
+    "sold": 4020,
+    "description": "Fontanella silenziosa a flusso continuo che incoraggia il gatto a bere di più. Filtro a carboni attivi e pompa a basso consumo (2 W). Lavabile in lavastoviglie.",
+    "specs": {
+      "Capacità": "2 L",
+      "Filtro": "Carboni attivi + resina, da cambiare ogni 4 settimane",
+      "Rumorosità": "< 30 dB",
+      "Alimentazione": "USB 5 V, 2 W",
+      "Materiale": "Plastica senza BPA"
+    },
+    "variants": []
+  },
+  {
+    "id": "gatti-snack-malto-antiboli",
+    "name": "Snack al Malto Anti-boli 60 g",
+    "brand": "Felinia",
+    "category": "gatti",
+    "price": 3.49,
+    "salePrice": null,
+    "lowestPrice30d": 3.49,
+    "rating": 4.3,
+    "reviews": 389,
+    "sold": 6650,
+    "description": "Bocconcini croccanti ripieni di crema al malto che favoriscono l'eliminazione dei boli di pelo. Da 5 a 10 snack al giorno.",
+    "specs": {
+      "Peso": "60 g",
+      "Età": "Adulto",
+      "Funzione": "Anti-boli di pelo",
+      "Calorie": "3,9 kcal/snack",
+      "Origine": "Prodotto in UE"
+    },
+    "variants": []
+  },
+  {
+    "id": "uccelli-miscela-canarini-premium",
+    "name": "Miscela Canarini Premium",
+    "brand": "PiumaVerde",
+    "category": "uccelli",
+    "price": 6.9,
+    "salePrice": null,
+    "lowestPrice30d": 6.9,
+    "rating": 4.6,
+    "reviews": 312,
+    "sold": 2870,
+    "description": "Miscela di semi selezionati e ripuliti per canarini, con perilla, niger e biscotto all'uovo. Favorisce il canto e una muta regolare.",
+    "specs": {
+      "Composizione": "Scagliola, ravizzone, avena decorticata, niger, perilla",
+      "Arricchita con": "Biscotto all'uovo, vitamine A-D3-E",
+      "Pulizia": "Semi ventilati e depolverati",
+      "Origine": "Confezionato in Italia"
+    },
+    "variants": [
+      {
+        "label": "1 kg",
+        "price": 6.9,
+        "salePrice": null,
+        "lowestPrice30d": 6.9
+      },
+      {
+        "label": "2,5 kg",
+        "price": 14.9,
+        "salePrice": 12.9,
+        "lowestPrice30d": 14.9
+      },
+      {
+        "label": "5 kg",
+        "price": 26.9,
+        "salePrice": null,
+        "lowestPrice30d": 26.9
+      }
+    ]
+  },
+  {
+    "id": "uccelli-miscela-pappagalli-frutta",
+    "name": "Miscela Pappagalli Grandi con Frutta 2 kg",
+    "brand": "PiumaVerde",
+    "category": "uccelli",
+    "price": 16.9,
+    "salePrice": 14.9,
+    "lowestPrice30d": 16.9,
+    "rating": 4.5,
+    "reviews": 204,
+    "sold": 1320,
+    "description": "Per ara, cenerini e cacatua: semi di girasole, mais, arachidi sgusciate e pezzetti di frutta disidratata (papaya, ananas, banana).",
+    "specs": {
+      "Peso": "2 kg",
+      "Specie": "Pappagalli medio-grandi",
+      "Frutta": "12% papaya, ananas, banana",
+      "Senza": "Coloranti artificiali",
+      "Origine": "Confezionato in Italia"
+    },
+    "variants": []
+  },
+  {
+    "id": "uccelli-gabbia-voliera-78",
+    "name": "Gabbia Voliera Bella Vista 78 cm",
+    "brand": "PiumaVerde",
+    "category": "uccelli",
+    "price": 119,
+    "salePrice": 99,
+    "lowestPrice30d": 109,
+    "rating": 4.6,
+    "reviews": 147,
+    "sold": 690,
+    "description": "Voliera in metallo verniciato atossico con tetto apribile, 4 mangiatoie, 3 posatoi in legno naturale e fondo estraibile per una pulizia rapida. Su ruote.",
+    "specs": {
+      "Dimensioni": "78×48×160 cm (con supporto)",
+      "Distanza sbarre": "1,2 cm",
+      "Materiale": "Acciaio verniciato atossico",
+      "Accessori": "4 mangiatoie, 3 posatoi, supporto con ruote",
+      "Adatta a": "Canarini, cocorite, inseparabili"
+    },
+    "variants": []
+  },
+  {
+    "id": "uccelli-osso-seppia-naturale",
+    "name": "Osso di Seppia Naturale 3 pz",
+    "brand": "PiumaVerde",
+    "category": "uccelli",
+    "price": 4.5,
+    "salePrice": null,
+    "lowestPrice30d": 4.5,
+    "rating": 4.7,
+    "reviews": 521,
+    "sold": 3940,
+    "description": "Fonte naturale di calcio e minerali, aiuta a mantenere il becco in forma. Con supporto in metallo per il fissaggio alla gabbia.",
+    "specs": {
+      "Contenuto": "3 ossi da 12-15 cm",
+      "Origine": "Mar Mediterraneo",
+      "Fissaggio": "Clip in acciaio inclusa",
+      "Adatto a": "Tutti gli uccelli da gabbia"
+    },
+    "variants": []
+  },
+  {
+    "id": "pesci-mangime-scaglie-tropicali",
+    "name": "Mangime in Scaglie Tropicali 250 ml",
+    "brand": "Aquaviva",
+    "category": "pesci",
+    "price": 7.9,
+    "salePrice": null,
+    "lowestPrice30d": 7.9,
+    "rating": 4.6,
+    "reviews": 688,
+    "sold": 5210,
+    "description": "Scaglie complete per tutti i pesci tropicali d'acqua dolce, con spirulina e krill per colori brillanti. Non intorbidiscono l'acqua.",
+    "specs": {
+      "Contenuto": "250 ml (50 g)",
+      "Acqua": "Dolce, tropicale",
+      "Proteine grezze": "46%",
+      "Arricchito con": "Spirulina, krill, vitamina C stabilizzata",
+      "Dose": "Quanto consumato in 2-3 minuti, 2 volte al giorno"
+    },
+    "variants": []
+  },
+  {
+    "id": "pesci-acquario-led-60l",
+    "name": "Acquario LED Completo 60 L",
+    "brand": "Aquaviva",
+    "category": "pesci",
+    "price": 149,
+    "salePrice": 129,
+    "lowestPrice30d": 139,
+    "rating": 4.7,
+    "reviews": 233,
+    "sold": 810,
+    "description": "Kit pronto all'uso con vasca in vetro float, coperchio con illuminazione LED giorno/notte, filtro interno, riscaldatore 75 W e termometro.",
+    "specs": {
+      "Capacità": "60 L",
+      "Dimensioni": "61×31×38 cm",
+      "Illuminazione": "LED 9 W, modalità giorno/notte",
+      "Filtro": "Interno 400 l/h",
+      "Riscaldatore": "75 W regolabile",
+      "Vetro": "Float 5 mm"
+    },
+    "variants": []
+  },
+  {
+    "id": "pesci-biocondizionatore-500ml",
+    "name": "Biocondizionatore Acqua 500 ml",
+    "brand": "Aquaviva",
+    "category": "pesci",
+    "price": 11.9,
+    "salePrice": 9.9,
+    "lowestPrice30d": 11.9,
+    "rating": 4.5,
+    "reviews": 402,
+    "sold": 2760,
+    "description": "Rende subito sicura l'acqua del rubinetto: neutralizza cloro, cloramine e metalli pesanti e protegge le mucose dei pesci con colloidi protettivi.",
+    "specs": {
+      "Contenuto": "500 ml (tratta fino a 2.000 L)",
+      "Dose": "5 ml ogni 20 L",
+      "Acqua": "Dolce",
+      "Azione": "Anticloro, chelante metalli pesanti"
+    },
+    "variants": []
+  },
+  {
+    "id": "pesci-filtro-interno-600",
+    "name": "Filtro Interno Silenzioso 600 l/h",
+    "brand": "Aquaviva",
+    "category": "pesci",
+    "price": 29.9,
+    "salePrice": null,
+    "lowestPrice30d": 29.9,
+    "rating": 4.4,
+    "reviews": 296,
+    "sold": 1490,
+    "description": "Filtro interno a tre stadi (meccanico, biologico, chimico) con portata regolabile e uscita orientabile. Per acquari da 80 a 150 litri.",
+    "specs": {
+      "Portata": "Fino a 600 l/h, regolabile",
+      "Acquari": "80-150 L",
+      "Consumo": "7 W",
+      "Stadi": "Spugna, cannolicchi ceramici, carbone attivo",
+      "Fissaggio": "Ventose"
+    },
+    "variants": []
+  },
+  {
+    "id": "piccoli-fieno-alpino-montagna",
+    "name": "Fieno Alpino di Montagna",
+    "brand": "Rodì",
+    "category": "piccoli",
+    "price": 5.9,
+    "salePrice": null,
+    "lowestPrice30d": 5.9,
+    "rating": 4.8,
+    "reviews": 874,
+    "sold": 7680,
+    "description": "Fieno di primo taglio raccolto sopra i 1.000 metri, ricco di fibra lunga ed erbe aromatiche. Essenziale per conigli, cavie e cincillà.",
+    "specs": {
+      "Taglio": "Primo taglio",
+      "Provenienza": "Prati alpini italiani",
+      "Fibra grezza": "28%",
+      "Adatto a": "Conigli, porcellini d'India, cincillà, degu",
+      "Polvere": "Depolverato meccanicamente"
+    },
+    "variants": [
+      {
+        "label": "1 kg",
+        "price": 5.9,
+        "salePrice": null,
+        "lowestPrice30d": 5.9
+      },
+      {
+        "label": "2,5 kg",
+        "price": 12.9,
+        "salePrice": 10.9,
+        "lowestPrice30d": 12.9
+      },
+      {
+        "label": "5 kg",
+        "price": 22.9,
+        "salePrice": null,
+        "lowestPrice30d": 22.9
+      }
+    ]
+  },
+  {
+    "id": "piccoli-pellet-coniglio-nano",
+    "name": "Pellet Completo Coniglio Nano 2 kg",
+    "brand": "Rodì",
+    "category": "piccoli",
+    "price": 13.9,
+    "salePrice": null,
+    "lowestPrice30d": 13.9,
+    "rating": 4.6,
+    "reviews": 455,
+    "sold": 3310,
+    "description": "Pellet estruso monocomponente: evita la selezione degli ingredienti e garantisce un'alimentazione equilibrata. Con erba medica, fieno di Timothy e prebiotici.",
+    "specs": {
+      "Peso": "2 kg",
+      "Fibra grezza": "22%",
+      "Proteine grezze": "14%",
+      "Ingredienti": "Erba medica, Timothy, semi di lino, FOS",
+      "Senza": "Zuccheri aggiunti e cereali"
+    },
+    "variants": []
+  },
+  {
+    "id": "piccoli-gabbia-criceto-multilivello",
+    "name": "Gabbia Criceto Multilivello",
+    "brand": "Rodì",
+    "category": "piccoli",
+    "price": 59.9,
+    "salePrice": 49.9,
+    "lowestPrice30d": 54.9,
+    "rating": 4.4,
+    "reviews": 198,
+    "sold": 920,
+    "description": "Gabbia a tre livelli con ruota silenziosa da 21 cm, casetta, beverino e scalette. Vaschetta profonda per una lettiera abbondante.",
+    "specs": {
+      "Dimensioni": "60×36×56 cm",
+      "Livelli": "3",
+      "Ruota": "Silenziosa Ø 21 cm",
+      "Accessori": "Casetta, beverino, ciotola, scalette",
+      "Adatta a": "Criceti, topolini"
+    },
+    "variants": []
+  },
+  {
+    "id": "piccoli-lettiera-carta-riciclata",
+    "name": "Lettiera in Carta Riciclata 30 L",
+    "brand": "Alpestre Pet",
+    "category": "piccoli",
+    "price": 16.9,
+    "salePrice": 14.9,
+    "lowestPrice30d": 16.9,
+    "rating": 4.5,
+    "reviews": 367,
+    "sold": 2450,
+    "description": "Fiocchi morbidi di carta riciclata, ultra-assorbenti e privi di polvere. Assorbe fino a 3 volte il proprio peso e controlla gli odori in modo naturale.",
+    "specs": {
+      "Volume": "30 L",
+      "Materiale": "Carta riciclata non stampata",
+      "Assorbenza": "Fino a 3 volte il peso",
+      "Polvere": "99% priva di polvere",
+      "Compostabile": "Sì"
+    },
+    "variants": []
+  }
+]
