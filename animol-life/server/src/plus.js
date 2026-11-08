@@ -73,6 +73,25 @@ export async function subscribePlus({ cfg, stores }, body, req) {
 export async function requestCancel({ cfg, stores }, body, req) {
   if (!isPlainObject(body)) throw new ValidationError('Corpo della richiesta non valido');
   const email = requireEmail(body);
+  // Modalità demo (senza Stripe): i membri creati dalla demo non hanno pagamenti, la disdetta è immediata
+  // così pagina e server restano coerenti (il server smette subito di applicare i vantaggi Plus).
+  if (!cfg.stripeSecretKey) {
+    const demoMember = await stores.plus.update((data) => {
+      const m = data.members.find((x) => x.email === email && x.demo === true && ['active', 'trialing', 'past_due'].includes(x.status));
+      if (!m) return null;
+      Object.assign(m, { status: 'canceled', canceledAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      return m;
+    });
+    if (demoMember) {
+      await sendEmail(cfg, {
+        tag: 'plus-canceled',
+        to: email,
+        subject: 'Disdetta di Animol Plus registrata',
+        text: 'La disdetta del tuo abbonamento Animol Plus (modalità dimostrativa) è stata registrata. Non riceverai alcun addebito.',
+      });
+      return { ok: true, canceled: true, demo: true, message: 'Disdetta registrata (modalità dimostrativa). Nessun addebito.' };
+    }
+  }
   const { token, hash } = newToken();
   const member = await stores.plus.update((data) => {
     const m = data.members.find((x) => x.email === email && ['active', 'trialing', 'past_due'].includes(x.status));

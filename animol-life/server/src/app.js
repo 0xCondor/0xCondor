@@ -6,7 +6,7 @@ import { loadConfig } from './config.js';
 import { Catalog } from './catalog.js';
 import { stores as makeStores } from './store.js';
 import { createAssistant } from './assistant.js';
-import { createOrder, lookupOrder, resolveCart } from './orders.js';
+import { createOrder, lookupOrder, resolveCart, parseShippingMethod } from './orders.js';
 import { subscribe, confirm, unsubscribe } from './newsletter.js';
 import { subscribePlus, requestCancel, confirmCancel, handleStripeWebhook } from './plus.js';
 import { upcomingLives } from './lives.js';
@@ -86,6 +86,9 @@ export function createApp(options = {}) {
       subtotal: order.subtotalCents / 100,
       discount: (order.couponDiscountCents + order.plusDiscountCents) / 100,
       shipping: order.shippingCents / 100,
+      shippingMethod: order.shippingMethod,
+      paymentMethod: order.paymentMethod,
+      plusApplied: order.isPlus,
       currency: 'EUR',
       status: order.status,
     });
@@ -97,8 +100,9 @@ export function createApp(options = {}) {
     const lines = await resolveCart(catalog, body.items ?? body.cart);
     const coupon = body.coupon ? String(body.coupon).trim().toUpperCase() : null;
     if (coupon && !COUPONS[coupon]) throw new ValidationError('Codice coupon non valido', 'coupon');
-    const t = computeTotals({ lines, couponCode: coupon, isPlus: false, shipping: cfg.shipping });
-    res.json({ subtotal: t.subtotalCents / 100, discount: t.couponDiscountCents / 100, shipping: t.shippingCents / 100, total: t.totalCents / 100, currency: 'EUR' });
+    const shippingMethod = parseShippingMethod(body);
+    const t = computeTotals({ lines, couponCode: coupon, isPlus: false, shipping: cfg.shipping, shippingMethod });
+    res.json({ subtotal: t.subtotalCents / 100, discount: t.couponDiscountCents / 100, shipping: t.shippingCents / 100, shippingMethod, total: t.totalCents / 100, currency: 'EUR' });
   });
 
   app.post('/api/order-status', limit('orders', rl.orders), async (req, res) => {

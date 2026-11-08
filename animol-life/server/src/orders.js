@@ -1,7 +1,7 @@
 // Ordini: validazione lato server e ricalcolo totali dal catalogo (mai fidarsi dei prezzi del client).
 import crypto from 'node:crypto';
 import { effectivePrice } from './catalog.js';
-import { COUPONS, computeTotals } from './policies.js';
+import { COUPONS, SHIPPING_METHODS, computeTotals } from './policies.js';
 import { sendEmail } from './email.js';
 import {
   ValidationError, requireString, optionalString, requireEmail, isPlainObject, CAP_RE, ORDER_ID_RE,
@@ -9,6 +9,17 @@ import {
 
 const MAX_LINES = 50;
 const MAX_QTY = 20;
+export const COD_MAX_CENTS = 50000; // contrassegno fino a 500 €, come indicato nella pagina
+
+/** Metodo di spedizione: 'standard' (default), 'express' o 'point'. Valori diversi -> errore 400. */
+export function parseShippingMethod(body) {
+  const raw = body.shippingMethod ?? (isPlainObject(body.shipping) ? body.shipping.method : undefined);
+  if (raw === undefined || raw === null || raw === '') return 'standard';
+  if (typeof raw !== 'string' || !Object.hasOwn(SHIPPING_METHODS, raw)) {
+    throw new ValidationError('Metodo di spedizione non valido: usa "standard", "express" o "point"', 'shippingMethod');
+  }
+  return raw;
+}
 const ID_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // niente 0/O/1/I: più facile da dettare al telefono
 
 export function newOrderId(date = new Date()) {
@@ -91,10 +102,15 @@ export async function createOrder({ cfg, catalog, stores }, body) {
     couponCode = String(body.coupon).trim().toUpperCase().slice(0, 30);
     if (!COUPONS[couponCode]) throw new ValidationError('Codice coupon non valido', 'coupon');
   }
+  const shippingMethod = parseShippingMethod(body);
   const isPlus = await isPlusMember(stores, customer.email);
-  const totals = computeTotals({ lines, couponCode, isPlus, shipping: cfg.shipping });
+  const totals = computeTotals({ lines, couponCode, isPlus, shipping: cfg.shipping, shippingMethod });
   const notes = optionalString(body, 'notes', { max: 500, label: 'note' });
   const paymentMethod = ['card', 'paypal', 'cod'].includes(body.paymentMethod) ? body.paymentMethod : 'card';
+  // Il contrassegno non aggiunge mai costi (art. 62 Cod. Consumo); è disponibile solo fino a 500 €.
+  if (paymentMethod === 'cod' && totals.totalCents > COD_MAX_CENTS) {
+    throw new ValidationError('Il contrassegno è disponibile per ordini fino a 500 €', 'paymentMethod');
+  }
 
   const now = new Date();
   const order = {
@@ -129,7 +145,7 @@ export async function sendOrderConfirmation(cfg, order) {
     to: order.customer.email,
     subject: `Animol Life - conferma ordine ${order.orderId}`,
     text: `Ciao ${order.customer.name},\ngrazie per il tuo ordine ${order.orderId}.\n\n${rows}\n\n` +
-      `Spedizione: ${(order.shippingCents / 100).toFixed(2)} €\nTotale: ${order.total.toFixed(2)} €\n\n` +
+      `Spedizione${SHIPPING_METHODS[order.shippingMethod] ? ` ${SHIPPING_METHODS[order.shippingMethod].label.toLowerCase()}` : ''}: ${(order.shippingCents / 100).toFixed(2)} €\nTotale: ${order.total.toFixed(2)} €\n\n` +
       'Hai 14 giorni dalla consegna per esercitare il diritto di recesso.\nIl team Animol Life',
   });
 }
