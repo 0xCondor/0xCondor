@@ -1,0 +1,26 @@
+{
+  "name": "animol-life-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend Animol Life: API negozio, assistente IA (Claude), agente vocale Twilio, Plus (Stripe) e automazioni",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "job:abandoned-cart": "node automation/run.js abandoned-cart",
+    "job:low-stock": "node automation/run.js low-stock",
+    "job:daily-report": "node automation/run.js daily-report",
+    "job:ai-content": "node automation/run.js ai-content",
+    "jobs:all": "node automation/run.js all"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
+    "express": "^5.3.0",
+    "stripe": "^23.1.0"
+  }
+}
