@@ -2,6 +2,7 @@
 import { loadConfig } from '../src/config.js';
 import { Catalog } from '../src/catalog.js';
 import { stores as makeStores } from '../src/store.js';
+import { openRepo } from '../src/repo.js';
 
 export function loadEnvFile() {
   try {
@@ -13,10 +14,13 @@ export function loadEnvFile() {
 
 export function createContext(overrides = {}) {
   const cfg = overrides.cfg ?? loadConfig();
+  const repo = overrides.repo ?? openRepo(cfg.dataDir);
   return {
     cfg,
-    catalog: overrides.catalog ?? new Catalog(cfg.publicDir),
-    stores: overrides.stores ?? makeStores(cfg.dataDir),
+    repo,
+    // stesso catalogo del server: database (importato da products.json al primo avvio)
+    catalog: overrides.catalog ?? new Catalog(cfg.publicDir, { repo, exportFile: cfg.catalogExportFile }),
+    stores: overrides.stores ?? makeStores(cfg.dataDir, repo),
     log: overrides.log ?? ((...a) => console.log(...a)),
   };
 }

@@ -21,6 +21,7 @@ export function loadConfig(env = process.env, overrides = {}) {
     publicBaseUrl: (env.PUBLIC_BASE_URL || '').replace(/\/+$/, ''),
     trustProxy: env.TRUST_PROXY ?? '',
     publicDir: path.resolve(SERVER_ROOT, env.PUBLIC_DIR || '../public'),
+    venditaDir: path.resolve(SERVER_ROOT, env.VENDITA_DIR || '../vendita'),
     dataDir: path.resolve(SERVER_ROOT, env.DATA_DIR || 'data'),
     csp: env.CONTENT_SECURITY_POLICY || '',
 
@@ -36,6 +37,7 @@ export function loadConfig(env = process.env, overrides = {}) {
       forms: int(env.RATE_LIMIT_FORMS, 6),
       general: int(env.RATE_LIMIT_GENERAL, 120),
       auth: int(env.RATE_LIMIT_AUTH, 10),
+      leads: int(env.RATE_LIMIT_LEADS, 5),
     },
 
     shipping: {

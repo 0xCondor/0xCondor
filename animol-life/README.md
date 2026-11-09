@@ -13,13 +13,14 @@ Progetto sviluppato da un team di agenti IA, uno per settore (definizioni in `.c
 ## Avvio rapido
 
 - **Solo vetrina**: apri `public/index.html` nel browser. Funziona anche senza server, con un assistente e degli ordini di ripiego.
-- **Completo, con IA e ordini**: segui `server/README.md` (`cd server && npm install && npm start`, poi apri http://localhost:3000).
+- **Completo, con IA, account, pagamenti e pannello**: segui `server/README.md` (`cd server && npm install && npm start`, poi apri http://localhost:3000; il pannello di amministrazione è su http://localhost:3000/admin/ e la password del primo avvio viene stampata nel log).
 
 ## Struttura
 
 ```
-public/            negozio (file unico), catalogo products.json, pagine legali
-server/            API Express: /api/assistant, /api/orders, /api/plus/*, /voice/* (Twilio)
+public/            negozio (file unico), catalogo products.json (esportato dal database), pagine legali,
+                   admin/ (pannello di amministrazione), pagamento/ (pagina demo ed esito del pagamento)
+server/            API Express: account, ordini e pagamenti (Stripe/PayPal), /api/admin/*, /api/assistant, /api/plus/*, /voice/* (Twilio)
 docs/              analisi di mercato, roadmap, conformità legale, marketing
 ```
 

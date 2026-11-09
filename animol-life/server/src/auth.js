@@ -112,6 +112,9 @@ function safeEqual(a, b) {
 }
 
 const PRE_AUTH = new Set(['/auth/login', '/auth/register', '/auth/forgot', '/auth/reset', '/admin/login']);
+// Endpoint che non usano la sessione (autorizzati da un proprio token o pubblici in sola lettura):
+// le pagine /pagamento/* li chiamano senza conoscere il token CSRF.
+const SESSIONLESS = /^\/(order-status|payments\/demo\/[^/]+)$/;
 
 /**
  * Protezione CSRF per le richieste che modificano dati (montata su /api):
@@ -129,7 +132,7 @@ export function csrfProtection(cfg) {
       if (!allowed.has(origin)) return res.status(403).json({ error: 'forbidden', message: 'Origine della richiesta non consentita' });
     }
     if (req.get('sec-fetch-site') === 'cross-site') return res.status(403).json({ error: 'forbidden', message: 'Richiesta cross-site non consentita' });
-    if (PRE_AUTH.has(req.path)) return next();
+    if (PRE_AUTH.has(req.path) || SESSIONLESS.test(req.path)) return next();
     const token = req.get('x-csrf-token');
     const isAdminPath = req.path.startsWith('/admin/');
     const sess = isAdminPath ? req.adminSession : req.session;

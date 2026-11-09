@@ -501,6 +501,18 @@ table.specs tr:nth-child(odd) td,table.specs tr:nth-child(odd) th{background:var
 .order-card{border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
 .order-card .oc-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
 .order-card .oc-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700}
+.acc-dot{position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--surface)}
+@media (max-width:420px){#theme-btn{display:none}}
+.acc-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.acc-tabs button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-weight:650}
+.acc-tabs button[aria-selected="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.acc-form{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.acc-form .check{grid-column:span 6;display:flex;gap:8px;align-items:flex-start;font-size:.85rem}
+.acc-section{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+.acc-section h3{font-size:1rem;margin:0 0 8px}
+.pay-pill{font-size:.72rem;font-weight:750;padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--text)}
+.pay-pill.ok{background:var(--brand-soft);color:var(--brand-text)}
+.pay-pill.warn{background:#fff3cd;color:#7a4b00}
 .status-pill{font-size:.72rem;font-weight:750;padding:3px 9px;border-radius:999px;background:var(--brand-soft);color:var(--brand-text)}
 .order-card ul{margin:8px 0;padding-left:18px;font-size:.84rem;color:var(--muted)}
 .success-ico{width:72px;height:72px;margin:0 auto 12px;border-radius:999px;background:var(--brand-soft);color:var(--brand-text);display:flex;align-items:center;justify-content:center}
@@ -633,6 +645,7 @@ table.specs tr:nth-child(odd) td,table.specs tr:nth-child(odd) th{background:var
     <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15"/><path d="M5 19l8-8"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
     <symbol id="i-paw" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="16" rx="5" ry="4.2"/><circle cx="5.5" cy="10.5" r="2.3"/><circle cx="9.3" cy="6.3" r="2.3"/><circle cx="14.7" cy="6.3" r="2.3"/><circle cx="18.5" cy="10.5" r="2.3"/></symbol>
     <symbol id="a-dog" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M9 9c-3 0-5 3-5 6l3 1M23 9c3 0 5 3 5 6l-3 1"/><path d="M9 9c1-2 4-3 7-3s6 1 7 3c1.5 3 1.5 8 0 11-1.5 3-4 5-7 5s-5.5-2-7-5c-1.5-3-1.5-8 0-11z"/><circle cx="12.5" cy="15" r="1" fill="currentColor"/><circle cx="19.5" cy="15" r="1" fill="currentColor"/><path d="M14.5 20h3l-1.5 1.5z" fill="currentColor"/></symbol>
     <symbol id="a-cat" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M6 6l4 6M26 6l-4 6"/><path d="M6 6c0 4 0 6 1 8-1 7 3 12 9 12s10-5 9-12c1-2 1-4 1-8l-6 4c-1.3-.5-2.6-.7-4-.7s-2.7.2-4 .7z"/><circle cx="12.5" cy="17" r="1" fill="currentColor"/><circle cx="19.5" cy="17" r="1" fill="currentColor"/><path d="M15 20.5h2M3 18l5 .5M3 22l5-1M29 18l-5 .5M29 22l-5-1"/></symbol>
@@ -674,6 +687,7 @@ table.specs tr:nth-child(odd) td,table.specs tr:nth-child(odd) th{background:var
       <div class="header-actions">
         <a href="#plus" class="plus-link" id="plus-link"><svg aria-hidden="true"><use href="#i-crown"/></svg><span class="pl-text">Animol Plus</span></a>
         <button class="icon-btn" id="theme-btn" type="button" aria-label="Attiva tema scuro"><svg aria-hidden="true"><use href="#i-moon"/></svg></button>
+        <button class="icon-btn" id="account-btn" type="button" aria-label="Accedi o crea un account"><svg aria-hidden="true"><use href="#i-user"/></svg><span class="acc-dot" id="acc-dot" hidden></span></button>
         <button class="icon-btn" id="orders-btn" type="button" aria-label="I miei ordini"><svg aria-hidden="true"><use href="#i-orders"/></svg></button>
         <button class="icon-btn" id="favs-btn" type="button" aria-label="Preferiti"><svg aria-hidden="true"><use href="#i-heart"/></svg><span class="badge-count" id="fav-count" hidden>0</span></button>
         <button class="icon-btn" id="cart-btn" type="button" aria-label="Carrello, 0 articoli"><svg aria-hidden="true"><use href="#i-cart"/></svg><span class="badge-count" id="cart-count" hidden>0</span></button>
@@ -943,6 +957,13 @@ table.specs tr:nth-child(odd) td,table.specs tr:nth-child(odd) th{background:var
   </div>
 </dialog>
 
+<dialog id="dlg-account" class="drawer" aria-labelledby="account-title">
+  <div class="drawer-inner">
+    <div class="modal-head"><h2 id="account-title">Il mio account</h2><button class="icon-btn" data-close aria-label="Chiudi"><svg aria-hidden="true"><use href="#i-close"/></svg></button></div>
+    <div class="drawer-body" id="account-body"></div>
+  </div>
+</dialog>
+
 <!-- Product modal -->
 <dialog id="dlg-product" class="sheet" aria-labelledby="pd-title">
   <div class="modal wide">
@@ -1080,6 +1101,7 @@ var SS = {
   del: function(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
 };
 
+var CSRF = null; /* token anti-CSRF della sessione (arriva da /api/auth/me o dal login) */
 /* Chiamate API con fallback: offline=true quando il backend non c'è (file://, server statico, 404/405/501). */
 function api(method, path, body, timeoutMs){
   if (location.protocol === 'file:') return Promise.resolve({ok:false, offline:true});
@@ -1087,6 +1109,7 @@ function api(method, path, body, timeoutMs){
   var timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, timeoutMs || 12000);
   var opts = {method:method, headers:{'Accept':'application/json'}, signal: ctrl ? ctrl.signal : undefined, credentials:'same-origin'};
   if (body !== undefined){ opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  if (CSRF && method !== 'GET') opts.headers['X-CSRF-Token'] = CSRF;
   return fetch(path, opts).then(function(res){
     clearTimeout(timer);
     var ct = res.headers.get('content-type') || '';
@@ -1094,7 +1117,7 @@ function api(method, path, body, timeoutMs){
       return {ok:false, offline:true, status:res.status};
     }
     return res.json().then(function(data){
-      if (!res.ok) return {ok:false, status:res.status, error:(data && (data.error || data.message)) || ('Errore ' + res.status)};
+      if (!res.ok) return {ok:false, status:res.status, error:(data && (data.message || data.error)) || ('Errore ' + res.status)};
       return {ok:true, data:data};
     });
   }).catch(function(){ clearTimeout(timer); return {ok:false, offline:true}; });
@@ -1146,6 +1169,29 @@ var CATS = [
 ];
 var CAT_LABEL = {cani:'Cani', gatti:'Gatti', uccelli:'Uccelli', pesci:'Pesci', piccoli:'Piccoli animali'};
 var BEST_IDS = PRODUCTS.slice().sort(function(a,b){ return b.sold - a.sold; }).slice(0,3).map(function(p){ return p.id; });
+var DEFAULT_ART = {cani:{t:'bag', c:'#1f6f5c', a:'#f4c26b', k:'dog'}, gatti:{t:'box', c:'#7a4b8c', a:'#ffd08a', k:'cat'}, uccelli:{t:'bag', c:'#c77d1a', a:'#fff1c1', k:'bird'}, pesci:{t:'jar', c:'#1f6fa8', a:'#bfe6ff', k:'fish'}, piccoli:{t:'bag', c:'#6b8f2a', a:'#efe2b5', k:'rabbit'}};
+/* Catalogo dal server (prodotti, prezzi e scorte gestiti dal pannello admin); offline resta quello incorporato. */
+function loadServerCatalog(){
+  return api('GET', '/api/products', undefined, 6000).then(function(res){
+    if (!res.ok || !res.data || !Array.isArray(res.data.products) || !res.data.products.length) return false;
+    var list = res.data.products.filter(function(p){ return p && p.id && p.name && typeof p.price === 'number' && CAT_LABEL[p.category]; });
+    if (!list.length) return false;
+    list.forEach(function(p){
+      var old = BY_ID[p.id];
+      p.art = (old && old.art) || DEFAULT_ART[p.category];
+      p.variants = Array.isArray(p.variants) ? p.variants : [];
+      p.specs = p.specs || {}; p.description = p.description || ''; p.brand = p.brand || '';
+      p.rating = p.rating || 0; p.reviews = p.reviews || 0; p.sold = p.sold || 0;
+    });
+    PRODUCTS = list; BY_ID = {};
+    PRODUCTS.forEach(function(p){ BY_ID[p.id] = p; });
+    BEST_IDS = PRODUCTS.slice().sort(function(a,b){ return b.sold - a.sold; }).slice(0,3).map(function(p){ return p.id; });
+    cart = cart.filter(function(l){ return BY_ID[l.id]; }).concat(cartUnknown.filter(function(l){ return BY_ID[l.id]; }));
+    cartUnknown = [];
+    favs = favs.filter(function(id){ return BY_ID[id]; });
+    return true;
+  });
+}
 
 var FREE_SHIP = 49;
 var MAX_QTY = 20; /* come MAX_QTY del server (server/src/orders.js) */
@@ -1440,9 +1486,14 @@ function unitPrice(p, label){
    Stato
    ========================================================= */
 var consent = LS.get('al_consent', null);
-var cart = LS.get('al_cart', []).filter(function(l){ return BY_ID[l.id] && l.qty > 0; });
+var cartRaw = LS.get('al_cart', []);
+var cart = cartRaw.filter(function(l){ return l && BY_ID[l.id] && l.qty > 0; });
+/* righe di prodotti che esistono solo nel catalogo del server (aggiunti dal pannello): recuperate dopo il caricamento */
+var cartUnknown = Array.isArray(cartRaw) ? cartRaw.filter(function(l){ return l && !BY_ID[l.id] && l.qty > 0; }) : [];
 var favs = LS.get('al_favs', []).filter(function(id){ return BY_ID[id]; });
 var coupon = LS.get('al_coupon', null);
+var couponDef = LS.get('al_coupon_def', null); /* coupon creati dal pannello admin, validati dal server */
+if (couponDef && couponDef.code === coupon && !COUPONS[coupon] && couponDef.pct > 0 && couponDef.pct <= 50) COUPONS[coupon] = {rate:couponDef.pct / 100, pct:couponDef.pct, label:coupon + ' · −' + couponDef.pct + '%'};
 if (coupon && !COUPONS[coupon]) coupon = null;
 var plus = LS.get('al_plus', null);
 var orders = LS.get('al_orders', []);
@@ -1576,6 +1627,7 @@ function toggleFav(id, btn){
 function lineKey(l){ return l.id + '|' + (l.variant || ''); }
 function addToCart(id, variant, qty, silent){
   var p = BY_ID[id]; if (!p) return;
+  if (p.stock === 0){ toast(p.name + ' è esaurito'); return; }
   if (p.variants.length && !variant) variant = p.variants[0].label;
   if (!p.variants.length) variant = null;
   var key = id + '|' + (variant || '');
@@ -1651,9 +1703,23 @@ function applyCoupon(code){
   code = String(code || '').trim().toUpperCase();
   var err = $('#coupon-err');
   if (!code){ if (err) err.textContent = 'Inserisci un codice.'; return; }
-  if (!COUPONS[code]){ if (err) err.textContent = 'Codice non valido o scaduto.'; return; }
+  if (!COUPONS[code]){
+    if (!serverOnline){ if (err) err.textContent = 'Codice non valido o scaduto.'; return; }
+    api('POST', '/api/coupons/validate', {code: code}).then(function(res){
+      if (!res.ok || !res.data || !res.data.valid){ var e2 = $('#coupon-err'); if (e2) e2.textContent = 'Codice non valido o scaduto.'; return; }
+      var c = res.data;
+      COUPONS[c.code] = {rate:c.percent / 100, pct:c.percent, label:c.code + ' · −' + c.percent + '%'};
+      LS.set('al_coupon_def', {code:c.code, pct:c.percent});
+      coupon = c.code; saveCart(); renderCart(); toast('Coupon ' + c.code + ' applicato');
+    });
+    return;
+  }
   coupon = code; saveCart(); renderCart();
   toast('Coupon ' + code + ' applicato');
+  /* il server resta la fonte di verità: un coupon disattivato dal negozio viene tolto */
+  if (serverOnline) api('POST', '/api/coupons/validate', {code: code}).then(function(res){
+    if (res.ok && res.data && res.data.valid === false && coupon === code){ coupon = null; saveCart(); renderCart(); toast('Il coupon ' + code + ' non è più valido'); }
+  });
 }
 function updateBadges(){
   var n = cartCount(), cb = $('#cart-count');
@@ -1735,6 +1801,12 @@ function openCheckout(){
   if (last){
     var map = {nome:'f-nome', cognome:'f-cognome', email:'f-email', telefono:'f-tel', via:'f-via', civico:'f-civico', cap:'f-cap', provincia:'f-prov', citta:'f-citta'};
     Object.keys(map).forEach(function(k){ var el = document.getElementById(map[k]); if (el && !el.value && last[k]) el.value = last[k]; });
+  }
+  if (account && account.user){
+    if (!$('#f-email').value) $('#f-email').value = account.user.email;
+    var nm = String(account.user.name || '').split(' ');
+    if (!$('#f-nome').value && nm[0]) $('#f-nome').value = nm[0];
+    if (!$('#f-cognome').value && nm.length > 1) $('#f-cognome').value = nm.slice(1).join(' ');
   }
   if (isPlus() && plus.email && !$('#f-email').value) $('#f-email').value = plus.email;
   $('#co-error').hidden = true;
@@ -1844,21 +1916,25 @@ function submitOrder(e){
       serverTotal: server && typeof res.data.total === 'number' ? res.data.total : null,
       plusApplied: server && typeof res.data.plusApplied === 'boolean' ? res.data.plusApplied : null,
       shipping: payload.shipping, payment: payload.payment, coupon: coupon || null,
-      address: address, status: (server && res.data.status) || 'Ricevuto', marketingConsent: mkt, plus: isPlus()
+      address: address, status: (server && res.data.status) || 'Ricevuto', marketingConsent: mkt, plus: isPlus(),
+      paymentUrl: server && typeof res.data.paymentUrl === 'string' && /^(https:\/\/|\/pagamento\/)/.test(res.data.paymentUrl) ? res.data.paymentUrl : null,
+      paymentProvider: server ? res.data.paymentProvider || null : null,
+      paymentError: server ? res.data.paymentError || null : null,
+      account: server ? !!res.data.account : false
     };
     orders.unshift(order); orders = orders.slice(0, 30);
     LS.set('al_orders', orders);
     cart = []; coupon = null; saveCart(); updateBadges(); renderCart();
     $('#f-terms').checked = false; $('#f-mkt').checked = false;
     closeDialog('dlg-checkout');
-    var redirect = res.ok && res.data && (res.data.paymentUrl || res.data.redirectUrl);
     showConfirmation(order);
-    if (redirect && /^(https:\/\/|\/)/.test(redirect)) setTimeout(function(){ location.href = redirect; }, 1500);
   });
 }
 function showConfirmation(o){
   var s = SHIPPING[o.shipping.method];
   var payNote = o.payment.method === 'cod' ? 'Pagherai ' + fmt(o.serverTotal != null ? o.serverTotal : o.totals.total) + ' in contanti al corriere alla consegna.'
+    : o.paymentUrl ? 'L\'ordine è registrato ed è in attesa di pagamento: completalo ora sulla pagina sicura' + (o.paymentProvider === 'demo' ? ' (DIMOSTRATIVA, nessun addebito reale)' : '') + '.'
+    : o.paymentError ? o.paymentError
     : o.payment.method === 'paypal' ? 'Completa il pagamento su PayPal: riceverai il link anche via email.'
     : 'Completa il pagamento con carta sulla pagina sicura del circuito: riceverai il link anche via email.';
   $('#ok-body').innerHTML = '<div class="success-ico"><svg aria-hidden="true"><use href="#i-check"/></svg></div>' +
@@ -1867,20 +1943,56 @@ function showConfirmation(o){
     '<p class="small">Totale <strong>' + fmt(o.serverTotal != null ? o.serverTotal : o.totals.total) + '</strong> IVA inclusa · ' + esc(s.label) + ', consegna stimata <strong>' + etaRange(s.eta[0], s.eta[1]) + '</strong>.</p>' +
     '<p class="small muted">' + payNote + ' Ti abbiamo inviato il riepilogo a ' + esc(o.address.email) + '. Hai 14 giorni dalla consegna per esercitare il diritto di recesso.</p>' +
     (o.serverTotal != null && Math.abs(o.serverTotal - o.totals.total) >= 0.005 ? '<p class="xs muted" id="ok-total-note" style="background:var(--surface-2);padding:8px 10px;border-radius:10px">Il totale è stato ricalcolato dal nostro sistema (stimato nel carrello: ' + fmt(o.totals.total) + ')' + (o.plusApplied === false && o.plus ? ': i vantaggi Plus valgono solo per gli ordini fatti con l\'email dell\'abbonamento' : '') + '.</p>' : '') +
-    (o.source === 'locale' ? '<p class="xs muted" style="background:var(--surface-2);padding:8px 10px;border-radius:10px">Modalità dimostrativa: server ordini non raggiungibile, numero generato localmente e ordine salvato solo su questo dispositivo.</p>' : '');
+    (o.source === 'locale' ? '<p class="xs muted" style="background:var(--surface-2);padding:8px 10px;border-radius:10px">Modalità dimostrativa: server ordini non raggiungibile, numero generato localmente e ordine salvato solo su questo dispositivo.</p>' : '') +
+    (o.paymentUrl ? '<p style="margin:14px 0 0"><a class="btn btn-primary btn-lg btn-block" id="ok-pay" href="' + esc(o.paymentUrl) + '">' + (o.payment.method === 'paypal' ? 'Paga con PayPal' : 'Paga ora') + ' · ' + fmt(o.serverTotal != null ? o.serverTotal : o.totals.total) + '</a></p>' : '') +
+    (o.account ? '<p class="xs muted">L\'ordine è salvato nel tuo account, in "I miei ordini".</p>' : '');
   openDialog('dlg-confirm');
 }
 
 /* =========================================================
    I miei ordini
    ========================================================= */
+function renderServerOrders(){
+  var b = $('#orders-body');
+  b.innerHTML = '<p class="small muted">Caricamento dei tuoi ordini…</p>';
+  api('GET', '/api/account/orders').then(function(res){
+    if (!res.ok || !res.data){ b.innerHTML = '<p class="small">Non è stato possibile caricare gli ordini. Riprova tra poco.</p>'; return; }
+    var list = res.data.orders || [];
+    if (!list.length){
+      b.innerHTML = '<div class="empty" style="border:0;background:transparent"><h3>Nessun ordine nel tuo account</h3><p>Gli ordini fatti dopo l\'accesso compaiono qui, su tutti i tuoi dispositivi.</p><button type="button" class="btn btn-primary" data-close data-goto="#shop">Vai al catalogo</button></div>';
+      return;
+    }
+    b.innerHTML = '<p class="xs muted" style="margin-top:0">Ordini del tuo account ' + esc(account.user.email) + '.</p>' + list.map(function(o){
+      var d = new Date(o.createdAt);
+      var payCls = o.paymentStatus === 'paid' ? ' ok' : (o.paymentStatus === 'pending' || o.paymentStatus === 'failed') ? ' warn' : '';
+      return '<div class="order-card" data-server-order="' + esc(o.orderId) + '"><div class="oc-head"><span class="oc-id">' + esc(o.orderId) + '</span><span class="status-pill">' + esc(o.statusLabel) + '</span></div>' +
+        '<div class="xs muted">' + fmtDate(d, {day:'numeric', month:'long', year:'numeric'}) + ' · ' + esc((SHIPPING[o.shippingMethod] || {label:o.shippingMethod}).label) + ' · ' + esc((PAYMENTS[o.paymentMethod] || {label:o.paymentMethod}).label) + '</div>' +
+        '<div style="margin-top:6px"><span class="pay-pill' + payCls + '">' + esc(o.paymentLabel) + '</span></div>' +
+        '<ul>' + o.items.map(function(i){ return '<li>' + i.qty + '× ' + esc(i.name) + (i.variant ? ' (' + esc(i.variant) + ')' : '') + '</li>'; }).join('') + '</ul>' +
+        (o.tracking ? '<p class="xs">Spedito con ' + esc(o.tracking.carrier) + ' · tracciamento <strong>' + esc(o.tracking.code) + '</strong>' + (o.tracking.url && /^https:\/\//.test(o.tracking.url) ? ' · <a href="' + esc(o.tracking.url) + '" target="_blank" rel="noopener noreferrer">segui la spedizione</a>' : '') + '</p>' : '') +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><strong>' + fmt(o.total) + '</strong><span style="display:flex;gap:6px">' +
+        (o.canPay ? '<button type="button" class="btn btn-primary btn-sm" data-pay="' + esc(o.orderId) + '">Paga ora</button>' : '') +
+        '<a class="btn btn-ghost btn-sm" href="legal/recesso.html">Recesso</a></span></div></div>';
+    }).join('');
+  });
+}
+function payOrder(id, btn){
+  if (btn) btn.disabled = true;
+  api('POST', '/api/account/orders/' + encodeURIComponent(id) + '/pay', {}).then(function(res){
+    if (btn) btn.disabled = false;
+    var url = res.ok && res.data && res.data.paymentUrl;
+    if (url && /^(https:\/\/|\/pagamento\/)/.test(url)){ location.href = url; return; }
+    toast('Impossibile avviare il pagamento: ' + (res.error || 'riprova più tardi'));
+  });
+}
 function renderOrders(){
+  if (account && account.user){ renderServerOrders(); return; }
   var b = $('#orders-body');
   if (!orders.length){
-    b.innerHTML = '<div class="empty" style="border:0;background:transparent"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="var(--surface-2)"/><use href="#i-orders" x="32" y="30" width="56" height="56" style="color:var(--muted)"/></svg><h3>Nessun ordine ancora</h3><p>Qui troverai lo storico dei tuoi acquisti effettuati da questo dispositivo.</p><button type="button" class="btn btn-primary" data-close data-goto="#shop">Vai al catalogo</button></div>';
+    b.innerHTML = '<div class="empty" style="border:0;background:transparent"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="var(--surface-2)"/><use href="#i-orders" x="32" y="30" width="56" height="56" style="color:var(--muted)"/></svg><h3>Nessun ordine ancora</h3><p>Qui troverai lo storico dei tuoi acquisti effettuati da questo dispositivo. Accedi al tuo account per vederli su tutti i dispositivi.</p><button type="button" class="btn btn-primary" data-close data-goto="#shop">Vai al catalogo</button></div>';
     return;
   }
-  b.innerHTML = '<p class="xs muted" style="margin-top:0">Storico salvato su questo dispositivo.</p>' + orders.map(function(o, idx){
+  b.innerHTML = '<p class="xs muted" style="margin-top:0">Storico salvato su questo dispositivo' + (serverOnline ? ' (ordini da ospite). <button type="button" class="link-btn" data-open-account>Accedi</button> per lo storico del tuo account.' : '.') + '</p>' + orders.map(function(o, idx){
     var d = new Date(o.date);
     return '<div class="order-card"><div class="oc-head"><span class="oc-id">' + esc(o.orderId) + '</span><span class="status-pill">' + esc(o.status) + '</span></div>' +
       '<div class="xs muted">' + fmtDate(d, {day:'numeric', month:'long', year:'numeric'}) + ' · ' + esc(o.shipping.label) + ' · ' + esc(o.payment.label) + '</div>' +
@@ -1943,7 +2055,33 @@ function activatePlusLocal(plan, email, source){
   toast('Benvenuto in Animol Plus! Vantaggi attivi.');
 }
 /* Attivazione: l'email serve al server per riconoscere il membro Plus negli ordini (stessa email al checkout). */
+function subscribeAccount(){
+  var pl = PLANS[selPlan], plan = selPlan;
+  if (!account){
+    afterLogin = subscribeAccount;
+    openAccount('login', 'Animol Plus è legato al tuo account: accedi o crea un account per attivarlo.');
+    return;
+  }
+  genericDialog('Attiva Animol Plus',
+    '<p style="margin-top:0">Piano scelto: <strong>' + pl.label + ' · ' + pl.renew + '</strong>. 14 giorni gratis, poi rinnovo automatico a ' + pl.renew + ', disdetta in 2 clic.</p>' +
+    '<p class="small">L\'abbonamento sarà collegato al tuo account <strong>' + esc(account.user.email) + '</strong>: i vantaggi valgono per gli ordini fatti dopo l\'accesso.</p>' +
+    '<div class="form-error" id="plus-err" role="alert" hidden></div>',
+    [{label:'Annulla'}, {label:'Attiva la prova gratuita', cls:'btn-plus', fn:function(){
+      var err = $('#plus-err'), btns = $$('#gen-foot button'); btns.forEach(function(b){ b.disabled = true; });
+      api('POST', '/api/plus/subscribe', {plan: plan}).then(function(res){
+        btns.forEach(function(b){ b.disabled = false; });
+        if (res.ok && res.data && res.data.demo){
+          closeDialog('dlg-generic'); account.plus = res.data.plus; syncPlusFromAccount(); refreshAll();
+          toast('Benvenuto in Animol Plus! Vantaggi attivi sul tuo account.'); return;
+        }
+        if (res.ok && res.data && res.data.url && /^https:\/\//.test(res.data.url)){ location.href = res.data.url; return; }
+        err.textContent = 'Impossibile avviare l\'abbonamento: ' + (res.error || 'riprova più tardi'); err.hidden = false;
+      });
+      return false;
+    }}]);
+}
 function subscribe(){
+  if (serverOnline){ subscribeAccount(); return; }
   var pl = PLANS[selPlan], plan = selPlan;
   var last = orders[0] && orders[0].address && orders[0].address.email;
   genericDialog('Attiva Animol Plus',
@@ -1973,6 +2111,15 @@ function subscribe(){
 function handlePlusReturn(){
   var m = /[?&]checkout=(success|cancel)/.exec(location.search);
   if (!m) return;
+  if (serverOnline){
+    LS.del('al_plus_pending');
+    if (m[1] === 'success'){
+      toast('Pagamento completato: Animol Plus si attiva sul tuo account appena riceviamo la conferma.');
+      setTimeout(refreshAccount, 4000);
+    } else toast('Attivazione di Animol Plus annullata: nessun addebito.');
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch(e){}
+    return;
+  }
   var pending = LS.get('al_plus_pending', null);
   LS.del('al_plus_pending');
   if (m[1] === 'success' && pending && !isPlus()){
@@ -1987,7 +2134,15 @@ function cancelPlus(){
     '<p style="margin-top:0">Disdicendo, il tuo abbonamento <strong>non si rinnoverà</strong> e non ti verrà addebitato più nulla (' + pl.renew + ').</p><p class="small muted">Perderai spedizione gratuita senza minimo, −5% extra, live private e accesso al marketplace' + (plus.box ? ' e la box mensile' : '') + '.</p>',
     [{label:'Mantieni Plus'}, {label:'Conferma disdetta', cls:'btn-secondary', fn:function(){
       var done = function(msg){ plus = null; LS.del('al_plus'); refreshAll(); toast(msg || 'Abbonamento disdetto. Nessun ulteriore addebito.'); };
-      if (!plus.email){ done(); return; }
+      if (serverOnline && account){
+        api('POST', '/api/plus/cancel', {}).then(function(res){
+          if (res.ok && res.data && res.data.canceled){ account.plus = null; done(); return; }
+          if (res.ok && res.data){ account.plus = res.data.plus; syncPlusFromAccount(); refreshAll(); toast(res.data.message); return; }
+          toast('Impossibile disdire ora: ' + res.error + '. Riprova o contatta l\'assistenza.');
+        });
+        return;
+      }
+      if (!plus.email || serverOnline){ done(); return; }
       api('POST', '/api/plus/cancel', {email: plus.email}).then(function(res){
         if (res.offline || (res.ok && res.data && res.data.canceled)) { done(); return; }
         if (res.ok){
@@ -2471,6 +2626,156 @@ function bindEvents(){
 /* =========================================================
    Avvio
    ========================================================= */
+/* =========================================================
+   Account cliente (richiede il server: offline la pagina resta in modalità dimostrativa)
+   ========================================================= */
+var account = null;       /* {user, plus} quando l'utente ha effettuato l'accesso */
+var serverOnline = false; /* true se le API degli account rispondono */
+var afterLogin = null;
+var accView = 'login', accNote = '', resetToken = null;
+
+function setAccount(data){
+  account = data && data.user ? {user: data.user, plus: data.plus || null} : null;
+  CSRF = data && data.csrfToken ? data.csrfToken : null;
+  syncPlusFromAccount();
+  var btn = $('#account-btn');
+  btn.setAttribute('aria-label', account ? 'Il mio account: ' + account.user.email : 'Accedi o crea un account');
+  $('#acc-dot').hidden = !account;
+}
+/* Con il server, Plus vale solo se l'ACCOUNT ha un abbonamento attivo: lo stato locale lo rispecchia. */
+function syncPlusFromAccount(){
+  if (!serverOnline) return;
+  var p = account && account.plus;
+  if (p && p.active){
+    plus = {active:true, plan:p.plan, email:account.user.email, since:p.since, trialEnds:p.trialEndsAt || p.currentPeriodEnd || new Date().toISOString(),
+            box:!!(plus && plus.box), boxAnimal:plus && plus.boxAnimal, demo:!!p.demo, source:'account', cancelAtPeriodEnd:!!p.cancelAtPeriodEnd};
+    LS.set('al_plus', plus);
+  } else if (plus){ plus = null; LS.del('al_plus'); }
+}
+function refreshAccount(){
+  return api('GET', '/api/auth/me', undefined, 6000).then(function(res){
+    if (!res.ok || !res.data) return false;
+    serverOnline = true; setAccount(res.data); refreshAll(); return true;
+  });
+}
+function accField(id, label, type, ac, extra){
+  return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + type + '" autocomplete="' + ac + '"' + (extra || '') + '></div>';
+}
+function renderAccount(){
+  var b = $('#account-body');
+  if (!serverOnline){
+    b.innerHTML = '<p>Gli account sono disponibili quando il negozio è collegato al server. In questa versione dimostrativa carrello, preferiti e ordini restano su questo dispositivo.</p>';
+    return;
+  }
+  if (account){
+    var u = account.user, p = account.plus;
+    b.innerHTML = '<p style="margin-top:0">Ciao <strong>' + esc(u.name || u.email) + '</strong><br><span class="small muted">' + esc(u.email) + (u.emailVerified ? '' : ' · email da confermare (controlla la posta)') + '</span></p>' +
+      '<p class="small">' + (p && p.active ? 'Animol Plus attivo · piano ' + (p.plan === 'yearly' ? 'annuale' : 'mensile') + (p.cancelAtPeriodEnd ? ' (disdetto, attivo fino a fine periodo)' : '') : 'Animol Plus non attivo') + '</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-primary btn-sm" data-open-orders>I miei ordini</button><button type="button" class="btn btn-secondary btn-sm" id="acc-logout">Esci</button></div>' +
+      '<div class="acc-section"><h3>Cambia password</h3><form class="acc-form" id="acc-pw-form" novalidate>' + accField('acc-cur', 'Password attuale', 'password', 'current-password') + accField('acc-new', 'Nuova password (almeno 10 caratteri)', 'password', 'new-password', ' minlength="10" maxlength="128"') +
+        '<div class="form-error" id="acc-pw-err" role="alert" hidden style="grid-column:span 6"></div><button class="btn btn-secondary btn-sm" type="submit" style="grid-column:span 6">Aggiorna password</button></form></div>' +
+      '<div class="acc-section"><h3>I tuoi dati (GDPR)</h3><p class="small">Puoi scaricare una copia dei dati collegati al tuo account oppure cancellare l\'account. Gli ordini restano conservati, senza collegamento all\'account, solo per gli obblighi fiscali.</p>' +
+        '<p><a class="btn btn-ghost btn-sm" id="acc-export" href="/api/account/export" download>Scarica i miei dati (JSON)</a></p>' +
+        '<form class="acc-form" id="acc-del-form" novalidate>' + accField('acc-del-pw', 'Password per confermare la cancellazione', 'password', 'current-password') +
+        '<div class="form-error" id="acc-del-err" role="alert" hidden style="grid-column:span 6"></div><button class="btn btn-secondary btn-sm" type="submit" style="grid-column:span 6">Elimina definitivamente l\'account</button></form>' +
+        '<p class="xs muted"><a href="legal/privacy.html">Informativa privacy</a></p></div>';
+    return;
+  }
+  var tabs = '<div class="acc-tabs" role="tablist"><button type="button" role="tab" data-acc-view="login" aria-selected="' + (accView === 'login') + '">Accedi</button><button type="button" role="tab" data-acc-view="register" aria-selected="' + (accView === 'register') + '">Crea account</button></div>';
+  var note = accNote ? '<p class="small" style="background:var(--surface-2);padding:8px 10px;border-radius:10px">' + esc(accNote) + '</p>' : '';
+  var err = '<div class="form-error" id="acc-err" role="alert" hidden style="grid-column:span 6"></div>';
+  if (accView === 'reset'){
+    b.innerHTML = '<h3 style="margin-top:0">Imposta una nuova password</h3><form class="acc-form" id="acc-form" data-mode="reset" novalidate>' + accField('acc-password', 'Nuova password (almeno 10 caratteri)', 'password', 'new-password', ' minlength="10" maxlength="128"') + err +
+      '<button class="btn btn-primary btn-block" id="acc-submit" type="submit" style="grid-column:span 6">Salva la nuova password</button></form>';
+    return;
+  }
+  if (accView === 'forgot'){
+    b.innerHTML = note + '<h3 style="margin-top:0">Password dimenticata</h3><p class="small">Ti invieremo un link valido 1 ora per impostarne una nuova.</p><form class="acc-form" id="acc-form" data-mode="forgot" novalidate>' + accField('acc-email', 'Email', 'email', 'email', ' maxlength="254"') + err +
+      '<button class="btn btn-primary btn-block" id="acc-submit" type="submit" style="grid-column:span 6">Invia il link</button></form><p class="small"><button type="button" class="link-btn" data-acc-view="login">Torna all\'accesso</button></p>';
+    return;
+  }
+  if (accView === 'register'){
+    b.innerHTML = tabs + note + '<form class="acc-form" id="acc-form" data-mode="register" novalidate>' + accField('acc-name', 'Nome e cognome', 'text', 'name', ' maxlength="100"') + accField('acc-email', 'Email', 'email', 'email', ' maxlength="254"') +
+      accField('acc-password', 'Password (almeno 10 caratteri)', 'password', 'new-password', ' minlength="10" maxlength="128"') +
+      '<label class="check"><input type="checkbox" id="acc-privacy"> <span>Ho letto l\'<a href="legal/privacy.html" target="_blank" rel="noopener">informativa privacy</a>: l\'account serve a gestire ordini, abbonamento Plus e i miei dati.</span></label>' + err +
+      '<button class="btn btn-primary btn-block" id="acc-submit" type="submit" style="grid-column:span 6">Crea account</button></form>';
+    return;
+  }
+  b.innerHTML = tabs + note + '<form class="acc-form" id="acc-form" data-mode="login" novalidate>' + accField('acc-email', 'Email', 'email', 'username', ' maxlength="254"') + accField('acc-password', 'Password', 'password', 'current-password', ' maxlength="128"') + err +
+    '<button class="btn btn-primary btn-block" id="acc-submit" type="submit" style="grid-column:span 6">Accedi</button></form><p class="small"><button type="button" class="link-btn" data-acc-view="forgot">Password dimenticata?</button></p>' +
+    '<p class="xs muted">Puoi sempre ordinare anche come ospite, senza account.</p>';
+}
+function openAccount(view, note){
+  $$('dialog[open]').forEach(function(d){ if (d.id !== 'dlg-account') d.close(); });
+  if (view) accView = view;
+  accNote = note || '';
+  renderAccount();
+  openDialog('dlg-account');
+  setTimeout(function(){ var f = $('#account-body input'); if (f) f.focus(); }, 60);
+}
+function submitAccountForm(form){
+  var mode = form.dataset.mode, err = $('#acc-err'), btn = $('#acc-submit');
+  var val = function(id){ var el = document.getElementById(id); return el ? el.value : ''; };
+  var body, path;
+  if (mode === 'login'){ path = '/api/auth/login'; body = {email: val('acc-email').trim(), password: val('acc-password')}; }
+  else if (mode === 'register'){
+    path = '/api/auth/register'; body = {name: val('acc-name').trim(), email: val('acc-email').trim(), password: val('acc-password'), privacy: $('#acc-privacy').checked};
+    if (!body.privacy){ err.textContent = 'Per creare l\'account conferma di aver letto l\'informativa privacy.'; err.hidden = false; return; }
+    if (body.password.length < 10){ err.textContent = 'La password deve avere almeno 10 caratteri.'; err.hidden = false; return; }
+  }
+  else if (mode === 'forgot'){ path = '/api/auth/forgot'; body = {email: val('acc-email').trim()}; }
+  else { path = '/api/auth/reset'; body = {token: resetToken, password: val('acc-password')}; }
+  err.hidden = true; btn.disabled = true;
+  api('POST', path, body).then(function(res){
+    btn.disabled = false;
+    if (!res.ok){ err.textContent = res.offline ? 'Server non raggiungibile, riprova più tardi.' : res.error; err.hidden = false; return; }
+    if (mode === 'forgot'){ accView = 'login'; openAccount('login', res.data.message); return; }
+    if (mode === 'reset'){ resetToken = null; toast('Password aggiornata.'); }
+    if (res.data && res.data.user){
+      setAccount(res.data); refreshAll(); closeDialog('dlg-account');
+      toast(mode === 'register' ? 'Account creato: benvenuto in Animol Life!' : 'Accesso effettuato');
+      var next = afterLogin; afterLogin = null;
+      if (next) next();
+    } else openAccount('login', 'Password aggiornata: ora puoi accedere.');
+  });
+}
+function bindAccount(){
+  $('#account-btn').addEventListener('click', function(){ openAccount(account ? null : (accView === 'reset' ? 'reset' : 'login')); });
+  var body = $('#account-body');
+  body.addEventListener('click', function(e){
+    var v = e.target.closest('[data-acc-view]');
+    if (v){ accView = v.dataset.accView; accNote = ''; renderAccount(); return; }
+    if (e.target.closest('#acc-logout')){
+      api('POST', '/api/auth/logout', {}).then(function(){ setAccount(null); refreshAll(); closeDialog('dlg-account'); toast('Sei uscito dal tuo account'); });
+    }
+  });
+  body.addEventListener('submit', function(e){
+    e.preventDefault();
+    var f = e.target;
+    if (f.id === 'acc-form') submitAccountForm(f);
+    if (f.id === 'acc-pw-form'){
+      var pe = $('#acc-pw-err');
+      api('POST', '/api/account/password', {currentPassword: $('#acc-cur').value, newPassword: $('#acc-new').value}).then(function(res){
+        if (!res.ok){ pe.textContent = res.error || 'Errore'; pe.hidden = false; return; }
+        setAccount(res.data); renderAccount(); toast('Password aggiornata');
+      });
+    }
+    if (f.id === 'acc-del-form'){
+      var de = $('#acc-del-err');
+      if (!confirm('Vuoi davvero eliminare il tuo account? L\'operazione non si può annullare.')) return;
+      api('POST', '/api/account/delete', {password: $('#acc-del-pw').value}).then(function(res){
+        if (!res.ok){ de.textContent = res.error || 'Errore'; de.hidden = false; return; }
+        setAccount(null); refreshAll(); closeDialog('dlg-account'); genericDialog('Account eliminato', '<p>' + esc(res.data.message) + '</p>', [{label:'Chiudi', cls:'btn-primary'}]);
+      });
+    }
+  });
+  document.addEventListener('click', function(e){
+    if (e.target.closest('[data-open-account]')) { openAccount(account ? null : 'login'); return; }
+    var pay = e.target.closest('[data-pay]');
+    if (pay) payOrder(pay.dataset.pay, pay);
+  });
+}
+
 function init(){
   $('#year').textContent = new Date().getFullYear();
   $('#trust-eta').textContent = 'arrivo ' + etaRange(3,5);
@@ -2485,15 +2790,27 @@ function init(){
   updateBadges();
   renderCart();
   bindEvents();
-  handlePlusReturn();
-  requestAnimationFrame(function(){ setTimeout(renderGrid, 120); });
+  bindAccount();
+  var rm = location.hash.match(/^#reset=([\w-]{20,100})$/);
+  if (rm){ resetToken = rm[1]; accView = 'reset'; try { history.replaceState(null, '', location.pathname + location.search); } catch(e){} }
+  var am = /[?&]account=(verificato|link-non-valido)/.exec(location.search);
+  Promise.all([loadServerCatalog(), refreshAccount()]).then(function(r){
+    if (r[0]){ renderChips(); renderCart(); updateBadges(); }
+    renderGrid();
+    handlePlusReturn();
+    var pm = location.hash.match(/^#p=([\w-]+)/);
+    if (pm && BY_ID[pm[1]]) openProduct(pm[1]);
+    if (resetToken && serverOnline) openAccount('reset');
+    if (am){
+      toast(am[1] === 'verificato' ? 'Email confermata, grazie!' : 'Il link di conferma non è valido o è scaduto.');
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch(e){}
+    }
+  });
   if (!consent) $('#cookie-banner').hidden = false;
   if ('IntersectionObserver' in window){
     var io = new IntersectionObserver(function(en){ if (en.some(function(x){ return x.isIntersecting; })){ loadLives(); io.disconnect(); } }, {rootMargin:'400px'});
     io.observe($('#plus'));
   } else loadLives();
-  var m = location.hash.match(/^#p=([\w-]+)/);
-  if (m && BY_ID[m[1]]) setTimeout(function(){ openProduct(m[1]); }, 200);
   // altre schede: sincronizza carrello e preferiti
   window.addEventListener('storage', function(e){
     if (e.key === 'al_cart'){ cart = LS.get('al_cart', []).filter(function(l){ return BY_ID[l.id]; }); updateBadges(); renderCart(); }

@@ -252,6 +252,7 @@ export function adminRoutes(ctx, { aiClient } = {}) {
       },
       plus: { active: plus.filter((m) => ['active', 'trialing'].includes(m.status)).length, total: plus.length },
       customers: repo.users.countByRole('customer'),
+      leads: repo.leads.count(),
       lowStock: repo.products.list().filter((p) => p.stock !== null && p.stock <= cfg.lowStockThreshold).map((p) => ({ id: p.id, name: p.name, stock: p.stock })),
     });
   });
@@ -424,6 +425,21 @@ export function adminRoutes(ctx, { aiClient } = {}) {
     res.type('text/csv; charset=utf-8').send('﻿' + toCsv(list, [
       { key: 'email', label: 'email' }, { key: 'consentAt', label: 'consenso' }, { key: 'confirmedAt', label: 'confermato' },
     ]));
+  });
+
+  /* ----- contatti B2B (/vendita/) ----- */
+  const LEAD_COLUMNS = [
+    { key: 'createdAt', label: 'data' }, { key: 'shop', label: 'attività' }, { key: 'type', label: 'tipo' }, { key: 'name', label: 'referente' },
+    { key: 'email', label: 'email' }, { key: 'phone', label: 'telefono' }, { key: 'city', label: 'città' }, { key: 'interest', label: 'interesse' },
+    { key: 'message', label: 'messaggio' }, { key: 'marketing', label: 'consenso marketing' }, { key: 'consentVersion', label: 'versione informativa' },
+    { key: 'privacyAcceptedAt', label: 'privacy accettata' }, { key: 'source', label: 'origine' },
+  ];
+  r.get('/leads', (req, res) => res.json({ leads: repo.leads.list() }));
+  r.get('/leads.csv', (req, res) => {
+    const list = repo.leads.list({ limit: 100_000 }).map((l) => ({ ...l, marketing: l.marketingConsent ? `sì (${l.marketingConsentAt})` : 'no' }));
+    audit(req, 'leads.export', null, { count: list.length });
+    res.setHeader('Content-Disposition', `attachment; filename="contatti-b2b-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.type('text/csv; charset=utf-8').send('\uFEFF' + toCsv(list, LEAD_COLUMNS));
   });
 
   r.get('/audit', (req, res) => {

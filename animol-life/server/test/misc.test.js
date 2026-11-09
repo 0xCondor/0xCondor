@@ -118,18 +118,29 @@ test('promemoria Plus: fine prova (3 giorni prima) e rinnovo annuale, una sola v
   assert.deepEqual({ trial: again.trial, renewal: again.renewal }, { trial: 0, renewal: 0 });
 });
 
-test('catalogo reale: public/products.json (24 prodotti) coincide con il catalogo incorporato in index.html', async () => {
+test('catalogo reale: products.json (esportato dal DB) compatibile con il catalogo incorporato in index.html', async () => {
+  // La vetrina carica il catalogo da GET /api/products; il catalogo incorporato è solo il ripiego offline
+  // e products.json viene riscritto dal database a ogni modifica dal pannello admin.
   const { readFile } = await import('node:fs/promises');
   const { fileURLToPath } = await import('node:url');
   const pub = fileURLToPath(new URL('../../public/', import.meta.url));
   const products = JSON.parse(await readFile(pub + 'products.json', 'utf8'));
   const html = await readFile(pub + 'index.html', 'utf8');
   const embedded = JSON.parse(html.match(/<script[^>]*id="catalog-data"[^>]*>([\s\S]*?)<\/script>/)[1]);
-  assert.equal(products.length, 24);
-  const key = (p) => JSON.stringify([p.id, p.category, p.price, p.salePrice ?? null, (p.variants || []).map((v) => [v.label, v.price, v.salePrice ?? null])]);
-  assert.deepEqual(embedded.map(key), products.map(key));
   const { Catalog } = await import('../src/catalog.js');
   const cat = new Catalog(pub);
-  assert.equal((await cat.all()).length, 24);
+  assert.equal((await cat.all()).length, products.length, 'ogni prodotto di products.json è valido');
   assert.equal(cat.source, 'products.json');
+  assert.equal(new Set(products.map((p) => p.id)).size, products.length, 'id univoci');
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const common = embedded.filter((p) => byId.has(p.id));
+  assert.ok(common.length >= 1);
+  const shape = (p) => JSON.stringify([p.id, p.category, (p.variants || []).map((v) => v.label)]);
+  assert.deepEqual(common.map(shape), common.map((p) => shape(byId.get(p.id))));
+  // Finché il catalogo non è stato modificato dal pannello i due elenchi coincidono anche nei prezzi.
+  const sameIds = embedded.length === products.length && embedded.every((p) => byId.has(p.id));
+  if (sameIds) {
+    const key = (p) => JSON.stringify([p.id, p.price, p.salePrice ?? null, (p.variants || []).map((v) => [v.label, v.price, v.salePrice ?? null])]);
+    assert.deepEqual(embedded.map(key), products.map(key));
+  }
 });

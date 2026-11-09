@@ -14,6 +14,7 @@ import { handleStripeWebhook, paymentRoutes, startPayment, paymentProviders } fr
 import { authRoutes, loadSessions, csrfProtection, requireUser, publicUser } from './auth.js';
 import { adminRoutes, bootstrapAdmin, defaultCoupons } from './admin.js';
 import { upcomingLives } from './lives.js';
+import { createLead } from './leads.js';
 import { computeTotals } from './policies.js';
 import { createVoiceAgent, validateTwilio } from './voice.js';
 import { securityHeaders, rateLimit, ValidationError, requireEmail, isPlainObject } from './security.js';
@@ -133,9 +134,11 @@ export function createApp(options = {}) {
 
   app.post('/api/coupons/validate', limit('forms', rl.forms), (req, res) => {
     const body = isPlainObject(req.body) ? req.body : {};
-    const c = resolveCoupon(repo, body.code);
-    if (!c) throw new ValidationError('Inserisci un codice', 'code');
-    res.json({ code: c.code, percent: c.percent, description: c.description });
+    if (typeof body.code !== 'string' || !body.code.trim()) throw new ValidationError('Inserisci un codice', 'code');
+    // 200 anche per i codici non validi: è una risposta prevista, non un errore della richiesta.
+    let c = null;
+    try { c = resolveCoupon(repo, body.code); } catch (err) { if (!(err instanceof ValidationError)) throw err; }
+    res.json(c ? { valid: true, code: c.code, percent: c.percent, description: c.description } : { valid: false, message: 'Codice non valido o scaduto' });
   });
 
   app.post('/api/orders', limit('orders', rl.orders), async (req, res) => {
@@ -201,6 +204,12 @@ export function createApp(options = {}) {
     res.json({ ok: true });
   });
 
+  // Contatti B2B dalla landing /vendita/. Honeypot compilato: risposta di successo, nulla salvato.
+  app.post('/api/leads', limit('forms', rl.forms), limit('leads', rl.leads), async (req, res) => {
+    const r = await createLead(ctx, req.body);
+    res.status(r.dropped ? 202 : 201).json({ ok: true });
+  });
+
   app.post('/api/newsletter', limit('forms', rl.forms), async (req, res) => {
     res.status(202).json(await subscribe(ctx, req.body, req));
   });
@@ -240,6 +249,9 @@ export function createApp(options = {}) {
     res.type('text/xml').send(await voice.respond(req));
   });
 
+  if (cfg.venditaDir && fs.existsSync(cfg.venditaDir)) {
+    app.use('/vendita', express.static(cfg.venditaDir, { extensions: ['html'], maxAge: cfg.env === 'production' ? '1h' : 0, index: 'index.html', dotfiles: 'ignore' }));
+  }
   app.use(express.static(cfg.publicDir, { extensions: ['html'], maxAge: cfg.env === 'production' ? '1h' : 0, index: 'index.html' }));
   app.use((req, res) => {
     const index = path.join(cfg.publicDir, 'index.html');

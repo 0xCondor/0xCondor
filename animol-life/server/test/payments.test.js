@@ -36,6 +36,19 @@ describe('pagamento demo (nessuna chiave)', () => {
     assert.ok(outbox.some((m) => m.tag === 'order-paid' && m.subject.includes(o.orderId)));
   });
 
+  test('con una sessione attiva le pagine /pagamento/* funzionano senza token CSRF (autorizzate dal proprio token)', async () => {
+    const t = await start();
+    const a = await t.registerUser('sessione-demo@example.it');
+    const o = await (await a.post('/api/orders', { customer: { ...CUSTOMER, email: 'sessione-demo@example.it' }, items: ITEMS, paymentMethod: 'card' })).json();
+    const token = new URL(o.paymentUrl, t.base).searchParams.get('token');
+    const pay = await a.post(`/api/payments/demo/${o.orderId}`, { token, outcome: 'success' }, { 'x-csrf-token': '' });
+    assert.equal(pay.status, 200);
+    const st = await a.post('/api/order-status', { orderId: o.orderId }, { 'x-csrf-token': '' });
+    assert.equal((await st.json()).paymentStatus, 'paid');
+    // ma gli endpoint che usano la sessione restano protetti
+    assert.equal((await a.post('/api/account/profile', { name: 'Altro Nome' }, { 'x-csrf-token': '' })).status, 403);
+  });
+
   test('contrassegno: nessun pagamento online e nessun supplemento', async () => {
     const t = await start();
     const o = await (await t.post('/api/orders', { customer: CUSTOMER, items: ITEMS, paymentMethod: 'cod' })).json();

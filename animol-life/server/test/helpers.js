@@ -17,7 +17,7 @@ export async function startTestServer({ env = {}, overrides = {}, products, anth
   const cfg = loadConfig(
     {
       NODE_ENV: 'test', RATE_LIMIT_ASSISTANT: '1000', RATE_LIMIT_ORDERS: '1000', RATE_LIMIT_FORMS: '1000', RATE_LIMIT_GENERAL: '5000',
-      RATE_LIMIT_AUTH: '1000', SCRYPT_COST: '1024', ADMIN_EMAIL: ADMIN.email, ADMIN_PASSWORD: ADMIN.password, ...env,
+      RATE_LIMIT_AUTH: '1000', RATE_LIMIT_LEADS: '1000', SCRYPT_COST: '1024', ADMIN_EMAIL: ADMIN.email, ADMIN_PASSWORD: ADMIN.password, ...env,
     },
     { publicDir, dataDir, ...overrides },
   );

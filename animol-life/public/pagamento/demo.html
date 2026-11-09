@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Pagamento DEMO · Animol Life</title>
+<style>
+:root{--bg:#fffaf5;--surface:#fff;--text:#1f2937;--muted:#6b7280;--brand:#0f6b57;--border:#e5e7eb;--demo:#b45309;--demo-bg:#fff7ed}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1513;--surface:#18201d;--text:#e5ece9;--muted:#9aa8a2;--brand:#3fb894;--border:#2a3531;--demo:#fbbf24;--demo-bg:#2a2112}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding:16px}
+main{max-width:520px;margin:6vh auto;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px}
+.demo-banner{background:var(--demo-bg);color:var(--demo);border:2px dashed var(--demo);border-radius:12px;padding:12px 14px;font-weight:700;margin-bottom:18px}
+h1{font-size:1.35rem;margin:0 0 6px}
+.amount{font-size:2rem;font-weight:800;margin:14px 0}
+.muted{color:var(--muted);font-size:.9rem}
+.btn{display:block;width:100%;min-height:48px;border-radius:12px;border:0;font-size:1rem;font-weight:700;margin-top:10px;cursor:pointer}
+.btn-pay{background:var(--brand);color:#fff}
+.btn-cancel{background:transparent;color:var(--text);border:1px solid var(--border)}
+.err{color:#b91c1c;font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <div class="demo-banner" role="note">DEMO - pagamento simulato. Nessun addebito reale e nessun dato della carta richiesto.</div>
+  <h1>Pagamento dell'ordine <span id="order-id"></span></h1>
+  <p class="muted" id="method"></p>
+  <div class="amount" id="amount" aria-live="polite">…</div>
+  <p class="err" id="err" role="alert" hidden></p>
+  <button class="btn btn-pay" id="pay" type="button" disabled>Simula pagamento riuscito</button>
+  <button class="btn btn-cancel" id="cancel" type="button" disabled>Simula pagamento annullato</button>
+  <p class="muted">In produzione questa pagina è sostituita da Stripe Checkout o da PayPal. <a href="/">Torna al negozio</a></p>
+</main>
+<script>
+(function(){
+  'use strict';
+  var q = new URLSearchParams(location.search);
+  var orderId = q.get('order') || '', token = q.get('token') || '';
+  var $ = function(id){ return document.getElementById(id); };
+  var fmt = function(n){ return n.toLocaleString('it-IT', {style:'currency', currency:'EUR'}); };
+  function fail(msg){ $('err').textContent = msg; $('err').hidden = false; $('pay').disabled = $('cancel').disabled = true; }
+  if (!/^AL-\d{4}-[A-Z0-9]{6}$/.test(orderId) || !token){ fail('Link di pagamento non valido.'); return; }
+  $('order-id').textContent = orderId;
+  try { history.replaceState(null, '', location.pathname + '?order=' + encodeURIComponent(orderId) + '&token=' + encodeURIComponent(token)); } catch(e){}
+  fetch('/api/payments/demo/' + encodeURIComponent(orderId) + '?token=' + encodeURIComponent(token), {headers:{Accept:'application/json'}, credentials:'same-origin'})
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(d){
+      $('amount').textContent = fmt(d.total);
+      $('method').textContent = d.paymentMethod === 'paypal' ? 'Metodo scelto: PayPal (simulato)' : 'Metodo scelto: carta (simulata)';
+      if (d.paymentStatus === 'paid'){ location.replace('/pagamento/esito.html?order=' + encodeURIComponent(orderId) + '&esito=ok'); return; }
+      $('pay').disabled = $('cancel').disabled = false;
+    })
+    .catch(function(){ fail('Pagamento non trovato o già completato.'); $('amount').textContent = ''; });
+  function send(outcome){
+    $('pay').disabled = $('cancel').disabled = true;
+    fetch('/api/payments/demo/' + encodeURIComponent(orderId), {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json', Accept:'application/json'}, body:JSON.stringify({token:token, outcome:outcome})})
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(d){ if (/^\/pagamento\/esito\.html\?/.test(d.redirect)) location.replace(d.redirect); })
+      .catch(function(){ fail('Operazione non riuscita. Riprova.'); });
+  }
+  $('pay').addEventListener('click', function(){ send('success'); });
+  $('cancel').addEventListener('click', function(){ send('cancel'); });
+})();
+</script>
+</body>
+</html>

@@ -25,6 +25,7 @@ const STATIC_PORT = Number(process.env.E2E_STATIC_PORT || 8765);
 const SERVER_URL = `http://localhost:${PORT}`;
 const STATIC_URL = `http://localhost:${STATIC_PORT}`;
 const SHOTS = process.env.E2E_SCREENSHOTS === '1';
+const E2E_ADMIN = { email: 'admin.e2e@example.it', password: 'E2E-Admin-Password-2026' };
 const PRODUCTS = JSON.parse(fs.readFileSync(path.join(PUBLIC, 'products.json'), 'utf8'));
 const BY_ID = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 
@@ -303,6 +304,7 @@ async function suiteBasics(browser, env) {
     await page.locator('#cart-btn').click();
     await page.fill('#coupon-input', 'FINTO99');
     await page.locator('#coupon-form button').first().click();
+    await page.locator('#coupon-err', { hasText: /non valido/i }).waitFor({ timeout: 5000 }).catch(() => {});
     check('coupon non valido rifiutato', /non valido/i.test(await page.locator('#coupon-err').textContent()));
     for (const [code, pct] of [['ANIMOL10', 10], ['CUCCIOLO5', 5]]) {
       if (await page.locator('#coupon-remove').count()) await page.locator('#coupon-remove').click();
@@ -493,6 +495,30 @@ async function suitePlus(browser, env) {
   await step('attivazione demo', async () => {
     await page.locator('#plus').scrollIntoViewIfNeeded();
     await page.locator('#plus-subscribe').click();
+    if (env.mode === 'server') {
+      // Plus è legato all'account: la pagina chiede di accedere o registrarsi, poi riprende l'attivazione
+      await page.locator('#dlg-account[open]').waitFor();
+      check('Plus richiede un account', /legato al tuo account/.test(await page.locator('#account-body').textContent()));
+      await page.locator('[data-acc-view="register"]').click();
+      await page.fill('#acc-name', 'Paola Plus');
+      await page.fill('#acc-email', email);
+      await page.fill('#acc-password', 'Password-Plus-E2E-1');
+      await page.locator('#acc-privacy').check();
+      await page.locator('#acc-submit').click();
+      await page.locator('#gen-foot button.btn-plus').waitFor();
+      check('dialog di attivazione con l\'email dell\'account', (await page.locator('#gen-body').textContent()).includes(email));
+      const reqP = page.waitForRequest((r) => r.url().endsWith('/api/plus/subscribe'));
+      await page.locator('#gen-foot button.btn-plus').click();
+      const req = await reqP;
+      check('subscribe invia solo il piano, con token CSRF', ['monthly', 'yearly'].includes(req.postDataJSON().plan) && !req.postDataJSON().email && !!req.headers()['x-csrf-token'], JSON.stringify(req.postDataJSON()));
+      await page.locator('#pricing .plus-status').waitFor();
+      check('area Plus attiva', /Animol Plus è attivo/.test(await page.locator('#pricing').textContent()));
+      check('nessun redirect fuori dalla pagina', new URL(page.url()).pathname === '/');
+      const stored = await ls(page, 'al_plus');
+      check('Plus dall\'account', stored && stored.email === email && stored.source === 'account', JSON.stringify(stored));
+      check('live sbloccate', (await page.locator('#live-list [data-live-unlock]').count()) === 0);
+      return;
+    }
     await page.locator('#plus-email').waitFor();
     await page.fill('#plus-email', 'non-una-email');
     await page.locator('#gen-foot button.btn-plus').click();
@@ -568,7 +594,7 @@ async function suitePlus(browser, env) {
     await page.locator('#gen-foot button', { hasText: 'Conferma disdetta' }).click();
     if (reqP) {
       const body = (await reqP).postDataJSON();
-      check('cancel invia {email}', body.email === email, JSON.stringify(body));
+      check('cancel senza email (account autenticato)', !body.email, JSON.stringify(body));
       const resp = await respP;
       check('server accetta la disdetta (202, canceled)', resp.status() === 202 && (await resp.json()).canceled === true, resp.status());
     }
@@ -581,6 +607,15 @@ async function suitePlus(browser, env) {
   });
   await step('ritorno da Stripe Checkout', async () => {
     await page.evaluate((e) => localStorage.setItem('al_plus_pending', JSON.stringify({ plan: 'monthly', email: e, at: Date.now() })), email);
+    if (env.mode === 'server') {
+      // con gli account Plus si attiva solo dal webhook firmato: il ritorno non attiva nulla da solo
+      await page.goto(env.base + '/plus/?checkout=success&session_id=cs_test_e2e');
+      await page.locator('#toasts .toast', { hasText: 'Pagamento completato' }).waitFor();
+      const u = new URL(page.url());
+      check('/plus/?checkout=success riporta a /#plus', u.pathname === '/' && u.search === '' && u.hash === '#plus', page.url());
+      check('nessuna attivazione locale senza conferma del server', (await ls(page, 'al_plus')) === null && (await ls(page, 'al_plus_pending')) === null);
+      return;
+    }
     await page.goto(env.base + '/plus/?checkout=success&session_id=cs_test_e2e');
     await page.locator('#pricing .plus-status').waitFor();
     const u = new URL(page.url());
@@ -589,6 +624,218 @@ async function suitePlus(browser, env) {
     check('Plus attivato con l\'email in sospeso', st && st.email === email && st.plan === 'monthly' && (await ls(page, 'al_plus_pending')) === null, JSON.stringify(st));
   });
   check('nessun errore in console/pagina', errors.length === 0, errors.join(' || '));
+  await ctx.close();
+}
+
+/* =====================================================================
+   Account cliente, ordini dell'account e pagamento demo (solo server)
+   ===================================================================== */
+async function suiteAccount(browser, env) {
+  currentSuite = `${env.mode} account e pagamento demo`;
+  const { ctx, page, errors } = await newPage(browser, env);
+  const email = `cliente.${Date.now()}@example.it`;
+  const password = 'Password-Cliente-E2E-1';
+  const lines = [{ id: PRODUCTS.find((p) => !p.variants?.length).id, variant: null, qty: 2 }];
+  let paidOrder = null;
+  await step('registrazione', async () => {
+    await page.locator('#account-btn').click();
+    await page.locator('#dlg-account[open] #acc-form[data-mode="login"]').waitFor();
+    await page.locator('[data-acc-view="register"]').click();
+    await page.fill('#acc-name', 'Carla Cliente');
+    await page.fill('#acc-email', email);
+    await page.fill('#acc-password', 'corta');
+    await page.locator('#acc-privacy').check();
+    await page.locator('#acc-submit').click();
+    check('password troppo corta rifiutata', /almeno 10/.test(await page.locator('#acc-err').textContent()));
+    await page.fill('#acc-password', password);
+    await page.locator('#acc-submit').click();
+    await page.locator('#acc-dot').waitFor({ state: 'visible' });
+    check('connesso dopo la registrazione', !(await page.locator('#dlg-account').evaluate((d) => d.open)));
+    const cookies = await ctx.cookies(env.base);
+    const sid = cookies.find((c) => c.name === 'al_sid');
+    check('cookie di sessione httpOnly, SameSite=Lax, non leggibile da JS', sid && sid.httpOnly && sid.sameSite === 'Lax' && !(await page.evaluate(() => document.cookie)).includes('al_sid'), JSON.stringify(sid));
+  });
+  await step('ordine con carta e pagamento DEMO', async () => {
+    await seedCart(page, lines);
+    await page.locator('#cart-btn').click();
+    await page.locator('#go-checkout').click();
+    check('email dell\'account precompilata', (await page.inputValue('#f-email')) === email);
+    await closeAllDialogs(page);
+    const r = await placeOrderKeep(page, { ship: 'standard', pay: 'card', email });
+    const exp = expectedTotal(lines, { ship: 'standard' });
+    check('ordine collegato all\'account', r.apiBody.account === true && r.apiBody.paymentStatus === 'pending', JSON.stringify(r.apiBody));
+    check('totale server = riferimento', r.apiBody.total === exp, `${r.apiBody.total} vs ${exp}`);
+    const href = await page.locator('#ok-pay').getAttribute('href');
+    check('pulsante "Paga ora" verso la pagina demo', /^\/pagamento\/demo\.html\?order=AL-/.test(href), href);
+    await page.locator('#ok-pay').click();
+    await page.waitForURL(/\/pagamento\/demo\.html/);
+    await page.locator('#pay:not([disabled])').waitFor();
+    check('pagina di pagamento etichettata DEMO', /DEMO/.test(await page.locator('.demo-banner').textContent()));
+    check('importo dal server', normSpaces(await page.locator('#amount').textContent()) === normSpaces(euro(exp)), await page.locator('#amount').textContent());
+    await page.locator('#pay').click();
+    await page.waitForURL(/\/pagamento\/esito\.html\?order=.*esito=ok/);
+    await page.locator('#title.ok').waitFor();
+    check('esito: pagamento ricevuto (verificato sul server)', /Pagamento ricevuto/.test(await page.locator('#title').textContent()));
+    paidOrder = r.orderId;
+  });
+  await step('I miei ordini dal server', async () => {
+    await page.goto(env.base + '/');
+    await waitGrid(page);
+    await page.locator('#acc-dot').waitFor({ state: 'visible' });
+    await seedCart(page, lines);
+    await placeOrder(page, { ship: 'point', pay: 'cod', email, expectServer: true });
+    await page.locator('#orders-btn').click();
+    await page.locator('#orders-body [data-server-order]').first().waitFor();
+    const ids = await page.locator('#orders-body .oc-id').allTextContents();
+    check('2 ordini dell\'account, il più recente in cima', ids.length === 2 && ids[1] === paidOrder, ids.join(','));
+    const paidCard = page.locator(`[data-server-order="${paidOrder}"]`);
+    check('ordine pagato con stato "pagato"', /pagato/.test(await paidCard.locator('.pay-pill').textContent()));
+    await closeAllDialogs(page);
+  });
+  await step('esportazione dati e uscita', async () => {
+    const data = await page.evaluate(() => fetch('/api/account/export', { credentials: 'same-origin' }).then((r) => r.json()));
+    check('export GDPR con i propri ordini', data.account.email === email && data.orders.length === 2, JSON.stringify(data.account));
+    await page.locator('#account-btn').click();
+    await page.locator('#acc-logout').click();
+    await page.locator('#acc-dot').waitFor({ state: 'hidden' });
+    await page.locator('#orders-btn').click();
+    check('da disconnesso lo storico è quello locale', (await page.locator('#orders-body [data-server-order]').count()) === 0);
+    await closeAllDialogs(page);
+  });
+  await step('accesso', async () => {
+    await page.locator('#account-btn').click();
+    await page.fill('#acc-email', email);
+    await page.fill('#acc-password', 'password-sbagliata-x');
+    await page.locator('#acc-submit').click();
+    await page.locator('#acc-err:not([hidden])').waitFor();
+    check('password errata: messaggio generico', /Email o password non corretti/.test(await page.locator('#acc-err').textContent()));
+    await page.fill('#acc-password', password);
+    await page.locator('#acc-submit').click();
+    await page.locator('#acc-dot').waitFor({ state: 'visible' });
+    await page.locator('#orders-btn').click();
+    await page.locator('#orders-body [data-server-order]').first().waitFor();
+    check('dopo l\'accesso tornano gli ordini dell\'account', (await page.locator('#orders-body [data-server-order]').count()) === 2);
+    await closeAllDialogs(page);
+  });
+  const unexpected = errors.filter((e) => !/status of 401/.test(e));
+  check('nessun errore in console/pagina', unexpected.length === 0, unexpected.join(' || '));
+  await ctx.close();
+}
+/* Come placeOrder, ma lascia aperta la conferma (per il pulsante "Paga ora"). */
+async function placeOrderKeep(page, { ship, pay, email }) {
+  await page.locator('#cart-btn').click();
+  await page.locator('#go-checkout').click();
+  await page.locator('#dlg-checkout[open]').waitFor();
+  await fillCheckout(page, email ? { 'f-email': email } : {});
+  await page.locator(`label.option:has(input[name="ship"][value="${ship}"])`).click();
+  await page.locator(`label.option:has(input[name="pay"][value="${pay}"])`).click();
+  await page.locator('#f-terms').check();
+  const respP = page.waitForResponse((r) => r.url().endsWith('/api/orders') && r.request().method() === 'POST');
+  await page.locator('#co-submit').click();
+  const apiBody = await (await respP).json();
+  await page.locator('#dlg-confirm[open]').waitFor();
+  return { apiBody, orderId: (await page.locator('#order-number').textContent()).trim() };
+}
+
+/* =====================================================================
+   Pannello admin: prodotto creato -> visibile nel negozio (solo server)
+   ===================================================================== */
+async function suiteAdmin(browser, env) {
+  currentSuite = 'server pannello admin';
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'it-IT' });
+  const page = await ctx.newPage();
+  lastPage = page;
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  const name = `Cuccia Igloo E2E ${Date.now().toString(36)}`;
+  let productId = null;
+  await step('accesso amministratore', async () => {
+    await page.goto(env.base + '/admin/');
+    await page.locator('#login-view:not([hidden])').waitFor();
+    check('X-Robots-Tag noindex sul pannello', (await page.request.get(env.base + '/admin/')).headers()['x-robots-tag'] === 'noindex, nofollow');
+    await page.fill('#l-email', E2E_ADMIN.email);
+    await page.fill('#l-pass', 'password-sbagliata-x');
+    await page.locator('#login-submit').click();
+    await page.locator('#login-err:not([hidden])').waitFor();
+    check('password errata rifiutata', /non corretti/.test(await page.locator('#login-err').textContent()));
+    await page.fill('#l-pass', E2E_ADMIN.password);
+    await page.locator('#login-submit').click();
+    await page.locator('.kpi').first().waitFor();
+    check('dashboard con KPI', (await page.locator('.kpi').count()) >= 6);
+    check('vendite e membri Plus in dashboard', /Vendite 30 giorni/.test(await page.locator('#view').textContent()) && /Membri Plus attivi/.test(await page.locator('#view').textContent()));
+  });
+  await step('creazione prodotto con descrizione IA', async () => {
+    await page.locator('[data-tab="products"]').click();
+    await page.locator('#p-new').click();
+    await page.fill('#pf-name', name);
+    await page.fill('#pf-brand', 'CasaPet');
+    await page.selectOption('#pf-cat', 'gatti');
+    await page.fill('#pf-price', '29,90');
+    await page.fill('#pf-sale', '24,90');
+    await page.fill('#pf-stock', '10');
+    await page.fill('#pf-specs', 'Misura: 45 x 45 cm\nMateriale: feltro');
+    await page.locator('#pf-ai').click();
+    await page.locator('#pf-ai-note', { hasText: 'Bozza' }).waitFor();
+    check('descrizione generata (modello di testo senza chiave)', (await page.inputValue('#pf-desc')).includes(name));
+    const respP = page.waitForResponse((r) => r.url().endsWith('/api/admin/products') && r.request().method() === 'POST');
+    await page.locator('#pf button[type="submit"]').click();
+    const resp = await respP;
+    const body = await resp.json();
+    check('prodotto creato (201) con token CSRF', resp.status() === 201 && !!resp.request().headers()['x-csrf-token'], resp.status());
+    productId = body.product.id;
+    check('Omnibus: prezzo più basso 30 gg calcolato', body.product.lowestPrice30d === 29.9, JSON.stringify(body.product.lowestPrice30d));
+  });
+  await step('il prodotto è nel negozio e si può ordinare', async () => {
+    const shop = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'it-IT' });
+    await shop.addInitScript(() => { if (!localStorage.getItem('al_consent')) localStorage.setItem('al_consent', JSON.stringify({ necessary: true, preferences: true, analytics: false, marketing: false, date: new Date().toISOString(), version: 1 })); });
+    const sp = await shop.newPage();
+    await sp.goto(env.base + '/');
+    await waitGrid(sp);
+    await visibleSearch(sp).fill('Igloo E2E');
+    const card = sp.locator(`.card[data-pid="${productId}"]`);
+    await card.waitFor();
+    check('card del nuovo prodotto con prezzo scontato', normSpaces(await card.textContent()).includes(normSpaces(euro(24.9))), await card.textContent());
+    await card.locator('[data-act="add"]').click();
+    const r = await placeOrderKeep(sp, { ship: 'standard', pay: 'cod' });
+    check('totale server del nuovo prodotto (24,90 + 4,90)', r.apiBody.total === 29.8, JSON.stringify(r.apiBody));
+    await sp.close();
+    await shop.close();
+    // spedizione dall'admin con tracciamento
+    await page.locator('[data-tab="orders"]').click();
+    await page.locator(`[data-order="${r.orderId}"]`).click();
+    await page.locator('#od').waitFor();
+    await page.fill('#t-carrier', 'BRT');
+    await page.fill('#t-code', 'E2E12345');
+    await page.locator('#od [data-action="shipped"]').click();
+    await page.locator('#toast.show').waitFor();
+    const st = await (await fetch(env.base + '/api/order-status', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ orderId: r.orderId, email: ADDRESS['f-email'] }) })).json();
+    check('ordine spedito con tracciamento visibile al cliente', st.status === 'spedito' && st.tracking && st.tracking.code === 'E2E12345', JSON.stringify(st));
+  });
+  await step('coupon creato dal pannello e usato nel negozio', async () => {
+    await page.locator('[data-tab="coupons"]').click();
+    await page.fill('#cf-code', 'E2EPROMO');
+    await page.fill('#cf-pct', '15');
+    await page.locator('#cf button[type="submit"]').click();
+    await page.locator('#view tbody', { hasText: 'E2EPROMO' }).waitFor();
+    const sp = await ctx.newPage();
+    await sp.goto(env.base + '/');
+    await waitGrid(sp);
+    await sp.evaluate((id) => { localStorage.setItem('al_cart', JSON.stringify([{ id, variant: null, qty: 1 }])); localStorage.removeItem('al_coupon'); }, productId);
+    await reload(sp);
+    await sp.locator('#cart-btn').click();
+    await sp.fill('#coupon-input', 'e2epromo');
+    await sp.locator('#coupon-form button').first().click();
+    await sp.locator('.coupon-ok').waitFor();
+    check('coupon del pannello accettato dal negozio', /E2EPROMO/.test(await sp.locator('.coupon-ok').textContent()));
+    await sp.close();
+  });
+  await step('registro azioni', async () => {
+    await page.locator('[data-tab="audit"]').click();
+    await page.locator('#view tbody tr').first().waitFor();
+    const txt = await page.locator('#view').textContent();
+    check('registro con creazione prodotto e spedizione', /product\.create/.test(txt) && /order\.shipped/.test(txt) && /coupon\.create/.test(txt));
+  });
+  check('nessun errore di pagina nel pannello', errors.length === 0, errors.join(' || '));
   await ctx.close();
 }
 
@@ -676,7 +923,7 @@ async function suiteApi() {
   currentSuite = 'server API';
   await step('health', async () => {
     const h = await (await fetch(SERVER_URL + '/api/health')).json();
-    check('GET /api/health: 24 prodotti da products.json', h.catalog.count === 24 && h.catalog.source === 'products.json', JSON.stringify(h.catalog));
+    check('GET /api/health: 24 prodotti nel database, importati da products.json', h.catalog.count === 24 && h.catalog.source === 'database' && h.catalog.seed === 'products.json', JSON.stringify(h.catalog));
   });
   await step('voice', async () => {
     const r = await fetch(SERVER_URL + '/voice/incoming', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'CallSid=CAe2e&From=%2B393331234567&Direction=inbound' });
@@ -698,7 +945,7 @@ async function suiteApi() {
 /* ===================================================================== */
 (async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'animol-e2e-'));
-  const server = startProc(process.execPath, ['src/index.js'], { cwd: SERVER_DIR, env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, NODE_ENV: 'development', ANTHROPIC_API_KEY: '', STRIPE_SECRET_KEY: '', TWILIO_AUTH_TOKEN: '', RATE_LIMIT_ORDERS: '1000', RATE_LIMIT_FORMS: '1000', RATE_LIMIT_ASSISTANT: '1000', RATE_LIMIT_GENERAL: '10000' } });
+  const server = startProc(process.execPath, ['src/index.js'], { cwd: SERVER_DIR, env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, NODE_ENV: 'development', ANTHROPIC_API_KEY: '', STRIPE_SECRET_KEY: '', PAYPAL_CLIENT_ID: '', PAYPAL_CLIENT_SECRET: '', TWILIO_AUTH_TOKEN: '', RATE_LIMIT_ORDERS: '1000', RATE_LIMIT_FORMS: '1000', RATE_LIMIT_ASSISTANT: '1000', RATE_LIMIT_GENERAL: '10000', RATE_LIMIT_AUTH: '1000', ADMIN_EMAIL: E2E_ADMIN.email, ADMIN_PASSWORD: E2E_ADMIN.password, CATALOG_EXPORT_FILE: path.join(dataDir, 'products-export.json') } });
   const stat = startProc('python3', ['-m', 'http.server', String(STATIC_PORT), '--bind', '127.0.0.1'], { cwd: PUBLIC });
   let browser;
   try {
@@ -716,6 +963,8 @@ async function suiteApi() {
       if (want('assistant')) await suiteAssistant(browser, { ...o, width: 390, scheme: 'dark' });
       if (want('plus')) await suitePlus(browser, { ...o, width: 1440, scheme: 'light' });
       if (want('compliance')) await suiteCompliance(browser, { ...o, width: 1440, scheme: 'dark' });
+      if (o.mode === 'server' && want('account')) await suiteAccount(browser, { ...o, width: 1440, scheme: 'light' });
+      if (o.mode === 'server' && want('admin')) await suiteAdmin(browser, { ...o });
     }
   } catch (err) {
     check('esecuzione', false, err.stack);
