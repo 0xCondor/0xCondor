@@ -31,7 +31,7 @@ describe('agente vocale Twilio (senza firma)', () => {
 
   test('conversazione: consenso, domande, stato ordine, saluto', async () => {
     const t = await server();
-    const order = await (await t.post('/api/orders', { customer: CUSTOMER, items: [{ id: 'fieno-coniglio-1kg', qty: 1 }] })).json();
+    const order = await (await t.post('/api/orders', { customer: CUSTOMER, items: [{ id: 'fieno-coniglio-1kg', qty: 1 }], paymentMethod: 'cod' })).json();
     await t.postForm('/voice/incoming', { CallSid: 'CA2' });
 
     let xml = await (await t.postForm('/voice/respond?step=consent', { CallSid: 'CA2', SpeechResult: 'Sì' })).text();

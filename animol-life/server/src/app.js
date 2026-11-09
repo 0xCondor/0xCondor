@@ -3,14 +3,18 @@ import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadConfig } from './config.js';
-import { Catalog } from './catalog.js';
+import { Catalog, exportProduct } from './catalog.js';
 import { stores as makeStores } from './store.js';
+import { openRepo } from './repo.js';
 import { createAssistant } from './assistant.js';
-import { createOrder, lookupOrder, resolveCart, parseShippingMethod } from './orders.js';
+import { createOrder, lookupOrder, resolveCart, parseShippingMethod, resolveCoupon, orderSummary } from './orders.js';
 import { subscribe, confirm, unsubscribe } from './newsletter.js';
-import { subscribePlus, requestCancel, confirmCancel, handleStripeWebhook } from './plus.js';
+import { subscribePlus, cancelPlus, handlePlusStripeEvent, plusStatus, isPlusMember, removeMember, findMember } from './plus.js';
+import { handleStripeWebhook, paymentRoutes, startPayment, paymentProviders } from './payments.js';
+import { authRoutes, loadSessions, csrfProtection, requireUser, publicUser } from './auth.js';
+import { adminRoutes, bootstrapAdmin, defaultCoupons } from './admin.js';
 import { upcomingLives } from './lives.js';
-import { computeTotals, COUPONS } from './policies.js';
+import { computeTotals } from './policies.js';
 import { createVoiceAgent, validateTwilio } from './voice.js';
 import { securityHeaders, rateLimit, ValidationError, requireEmail, isPlainObject } from './security.js';
 
@@ -25,11 +29,41 @@ function page(title, message) {
 
 export function createApp(options = {}) {
   const cfg = options.config ?? loadConfig();
-  const catalog = options.catalog ?? new Catalog(cfg.publicDir);
-  const stores = options.stores ?? makeStores(cfg.dataDir);
+  const repo = options.repo ?? openRepo(cfg.dataDir);
+  const catalog = options.catalog ?? new Catalog(cfg.publicDir, { repo, exportFile: cfg.catalogExportFile });
+  const stores = options.stores ?? makeStores(cfg.dataDir, repo);
+  repo.coupons.seed(defaultCoupons());
   const assistant = options.assistant ?? createAssistant({ cfg, catalog, stores, client: options.anthropicClient });
   const voice = createVoiceAgent({ cfg, assistant });
-  const ctx = { cfg, catalog, stores };
+  const ctx = { cfg, catalog, stores, repo, fetch: options.fetch };
+  const ready = bootstrapAdmin(ctx, { log: cfg.env === 'test' ? () => {} : console.log });
+  ready.catch((err) => console.error('[admin] bootstrap non riuscito:', err.message));
+  const sessionPurge = setInterval(() => repo.sessions.purgeExpired(), 3_600_000);
+  sessionPurge.unref();
+
+  /* ----- funzioni dell'area personale (GDPR) ----- */
+  const startOrderPayment = async (order, req) => {
+    const r = await startPayment(ctx, order, req);
+    return { orderId: order.orderId, paymentProvider: r.provider, paymentUrl: r.url };
+  };
+  const exportAccountData = async (user) => ({
+    exportedAt: new Date().toISOString(),
+    notice: 'Copia dei dati personali che Animol Life conserva sul tuo account (art. 15 e 20 GDPR).',
+    account: publicUser(user),
+    orders: repo.orders.listByUser(user.id).map((o) => orderSummary(o, { full: true })),
+    plus: await findMember(stores, user.id).then((m) => m && { plan: m.plan, status: m.status, since: m.createdAt, trialEndsAt: m.trialEndsAt || null, currentPeriodEnd: m.currentPeriodEnd || null }),
+    newsletter: (await stores.newsletter.read()).filter((n) => n.email === user.email).map((n) => ({ status: n.status, consentAt: n.consentAt, confirmedAt: n.confirmedAt || null })),
+    savedCarts: (await stores.carts.read()).filter((c) => c.email === user.email).map((c) => ({ items: c.items, updatedAt: c.updatedAt })),
+    activeSessions: repo.sessions.countForUser(user.id),
+  });
+  const deleteAccountData = async (user) => {
+    await removeMember(ctx, user);
+    await stores.newsletter.update((list) => { const i = list.findIndex((n) => n.email === user.email); if (i >= 0) list.splice(i, 1); });
+    await stores.carts.update((list) => { for (let i = list.length - 1; i >= 0; i -= 1) if (list[i].email === user.email) list.splice(i, 1); });
+    repo.orders.detachUser(user.id);
+    repo.users.delete(user.id); // sessioni e token cancellati a cascata
+    repo.loginFailures.clear(`customer:${user.email}`);
+  };
 
   const app = express();
   app.disable('x-powered-by');
@@ -42,13 +76,19 @@ export function createApp(options = {}) {
   // Webhook Stripe: serve il corpo grezzo per verificare la firma, quindi va prima di express.json().
   app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '256kb' }), async (req, res, next) => {
     try {
-      res.json(await handleStripeWebhook(ctx, req.body, req.get('stripe-signature')));
+      res.json(await handleStripeWebhook(ctx, req.body, req.get('stripe-signature'), { onSubscriptionEvent: (e) => handlePlusStripeEvent(ctx, e) }));
     } catch (err) {
       next(err);
     }
   });
 
   app.use('/api', limit('general', rl.general), express.json({ limit: '32kb' }));
+  app.use(loadSessions(ctx));
+  app.use('/api', csrfProtection(cfg));
+  app.use(['/admin', '/api/admin'], (req, res, next) => {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
   app.use('/voice', express.urlencoded({ extended: false, limit: '16kb', parameterLimit: 100 }));
   app.use('/api', (req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -61,10 +101,12 @@ export function createApp(options = {}) {
       status: 'ok',
       version: pkg.version,
       time: new Date().toISOString(),
-      catalog: { source: catalog.source, count: products.length },
+      catalog: { source: catalog.source, seed: catalog.seed ?? null, count: products.length },
       integrations: {
         ai: assistant.mode,
         stripe: Boolean(cfg.stripeSecretKey),
+        paypal: paymentProviders(cfg).paypal,
+        demoPayments: paymentProviders(cfg).demo,
         twilioSignature: Boolean(cfg.twilioAuthToken),
         humanTransfer: Boolean(cfg.humanPhoneNumber),
         email: cfg.emailWebhookUrl ? 'webhook' : 'demo',
@@ -78,9 +120,41 @@ export function createApp(options = {}) {
     res.json(products?.length ? { reply, products } : { reply });
   });
 
+  app.use('/api', authRoutes(ctx, {
+    plusStatus: (userId) => plusStatus(stores, userId), deleteAccountData, exportAccountData, startOrderPayment, orderSummary,
+  }));
+  app.use('/api', paymentRoutes(ctx));
+  app.use('/api/admin', adminRoutes(ctx, { aiClient: options.anthropicClient }));
+
+  // Catalogo pubblico (solo prodotti attivi), usato dalla vetrina al posto del catalogo incorporato.
+  app.get('/api/products', async (req, res) => {
+    res.json({ products: (await catalog.all()).map(exportProduct), currency: 'EUR' });
+  });
+
+  app.post('/api/coupons/validate', limit('forms', rl.forms), (req, res) => {
+    const body = isPlainObject(req.body) ? req.body : {};
+    const c = resolveCoupon(repo, body.code);
+    if (!c) throw new ValidationError('Inserisci un codice', 'code');
+    res.json({ code: c.code, percent: c.percent, description: c.description });
+  });
+
   app.post('/api/orders', limit('orders', rl.orders), async (req, res) => {
-    const order = await createOrder(ctx, req.body);
+    const order = await createOrder(ctx, req.body, { user: req.user ?? null });
+    let payment = { paymentProvider: order.paymentMethod === 'cod' ? 'cod' : null, paymentUrl: null };
+    let paymentError = null;
+    if (order.paymentMethod !== 'cod') {
+      try {
+        payment = await startOrderPayment(repo.orders.get(order.orderId), req);
+      } catch (err) {
+        console.error('[payments] avvio del pagamento non riuscito:', err.message);
+        paymentError = 'Non è stato possibile avviare il pagamento: riprova da "I miei ordini" o contatta l\'assistenza.';
+      }
+    }
     res.status(201).json({
+      ...payment,
+      ...(paymentError ? { paymentError } : {}),
+      paymentStatus: order.paymentStatus,
+      account: Boolean(order.userId),
       orderId: order.orderId,
       total: order.total,
       subtotal: order.subtotalCents / 100,
@@ -98,11 +172,11 @@ export function createApp(options = {}) {
   app.post('/api/cart/quote', limit('quote', rl.general), async (req, res) => {
     const body = isPlainObject(req.body) ? req.body : {};
     const lines = await resolveCart(catalog, body.items ?? body.cart);
-    const coupon = body.coupon ? String(body.coupon).trim().toUpperCase() : null;
-    if (coupon && !COUPONS[coupon]) throw new ValidationError('Codice coupon non valido', 'coupon');
+    const coupon = resolveCoupon(repo, body.coupon);
     const shippingMethod = parseShippingMethod(body);
-    const t = computeTotals({ lines, couponCode: coupon, isPlus: false, shipping: cfg.shipping, shippingMethod });
-    res.json({ subtotal: t.subtotalCents / 100, discount: t.couponDiscountCents / 100, shipping: t.shippingCents / 100, shippingMethod, total: t.totalCents / 100, currency: 'EUR' });
+    const isPlus = req.user ? await isPlusMember(stores, req.user.id) : false;
+    const t = computeTotals({ lines, couponCode: coupon?.code ?? null, couponPercent: coupon?.percent ?? 0, isPlus, shipping: cfg.shipping, shippingMethod });
+    res.json({ subtotal: t.subtotalCents / 100, discount: (t.couponDiscountCents + t.plusDiscountCents) / 100, shipping: t.shippingCents / 100, shippingMethod, total: t.totalCents / 100, plusApplied: isPlus, currency: 'EUR' });
   });
 
   app.post('/api/order-status', limit('orders', rl.orders), async (req, res) => {
@@ -144,15 +218,12 @@ export function createApp(options = {}) {
     );
   });
 
-  app.post('/api/plus/subscribe', limit('forms', rl.forms), async (req, res) => {
+  // Plus è legato all'account: serve l'accesso (sessione + token CSRF).
+  app.post('/api/plus/subscribe', limit('forms', rl.forms), requireUser, async (req, res) => {
     res.json(await subscribePlus(ctx, req.body, req));
   });
-  app.post('/api/plus/cancel', limit('forms', rl.forms), async (req, res) => {
-    res.status(202).json(await requestCancel(ctx, req.body, req));
-  });
-  app.get('/api/plus/cancel/confirm', async (req, res) => {
-    const r = await confirmCancel(ctx, req.query.token);
-    res.status(r.ok ? 200 : 400).type('html').send(r.ok ? page('Disdetta Plus', r.message) : page('Link non valido', 'Il link non è valido o è scaduto.'));
+  app.post('/api/plus/cancel', limit('forms', rl.forms), requireUser, async (req, res) => {
+    res.status(202).json(await cancelPlus(ctx, req));
   });
   app.get('/api/plus/lives', async (req, res) => {
     res.json(await upcomingLives(cfg));
@@ -187,6 +258,6 @@ export function createApp(options = {}) {
     res.status(status).json({ error: status >= 500 ? 'internal_error' : 'error', message: status >= 500 ? 'Errore interno, riprova più tardi.' : err.message });
   });
 
-  Object.assign(app.locals, { cfg, catalog, stores, assistant, voice });
+  Object.assign(app.locals, { cfg, catalog, stores, repo, assistant, voice, ready });
   return app;
 }

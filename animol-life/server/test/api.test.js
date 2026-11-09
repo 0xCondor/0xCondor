@@ -17,7 +17,9 @@ describe('health e sicurezza', () => {
     assert.equal(body.status, 'ok');
     assert.equal(body.integrations.ai, 'fallback');
     assert.equal(body.integrations.stripe, false);
-    assert.equal(body.catalog.source, 'sample');
+    assert.equal(body.catalog.source, 'database');
+    assert.equal(body.catalog.seed, 'sample');
+    assert.equal(body.integrations.demoPayments, true);
     assert.ok(body.catalog.count > 0);
   });
 
@@ -118,9 +120,14 @@ describe('ordini', () => {
     assert.equal(body.total, 54.7); // 34,90 + 2 x 9,90, spedizione gratuita sopra 49 €
     assert.equal(body.shipping, 0);
     orderId = body.orderId;
-    const stored = JSON.parse(await fs.readFile(path.join(t.dataDir, 'orders.json'), 'utf8'));
+    assert.equal(body.paymentStatus, 'pending');
+    assert.equal(body.paymentProvider, 'demo');
+    assert.match(body.paymentUrl, /^\/pagamento\/demo\.html\?order=AL-/);
+    const stored = t.app.locals.repo.orders.all();
     assert.equal(stored.length, 1);
     assert.equal(stored[0].orderId, orderId);
+    assert.equal(stored[0].totalCents, 5470);
+    assert.equal(stored[0].userId, null, 'ordine da ospite');
     assert.ok(outbox.some((m) => m.tag === 'order-confirmation' && m.subject.includes(orderId)));
   });
 
@@ -169,7 +176,7 @@ describe('ordini', () => {
   test('assistente: stato ordine via chat', async () => {
     const body = await (await t.post('/api/assistant', { messages: [{ role: 'user', content: `Dov'è il mio ordine ${orderId}?` }] })).json();
     assert.match(body.reply, new RegExp(orderId));
-    assert.match(body.reply, /ricevuto/);
+    assert.match(body.reply, /ricevuto|in attesa di pagamento/);
   });
 
   test('POST /api/cart/quote e /api/carts', async () => {
@@ -209,58 +216,60 @@ describe('newsletter (doppio opt-in)', () => {
   });
 });
 
-describe('Animol Plus', () => {
-  test('subscribe in demo restituisce un url', async () => {
-    for (const plan of ['monthly', 'yearly']) {
-      const res = await t.post('/api/plus/subscribe', { plan });
-      assert.equal(res.status, 200);
-      const body = await res.json();
-      assert.ok(body.url.includes(plan));
-      assert.equal(body.demo, true);
-      assert.equal(body.trialDays, 14);
-    }
-    assert.equal((await t.post('/api/plus/subscribe', { plan: 'weekly' })).status, 400);
+describe('Animol Plus (legato all\'account)', () => {
+  test('senza accesso: subscribe e cancel rispondono 401', async () => {
+    assert.equal((await t.post('/api/plus/subscribe', { plan: 'monthly', email: 'chiunque@example.it' })).status, 401);
+    assert.equal((await t.post('/api/plus/cancel', { email: 'chiunque@example.it' })).status, 401);
   });
 
-  test('membro Plus demo: spedizione gratuita e -5%, disdetta immediata in demo', async () => {
-    const email = 'plusdemo@example.it';
-    await t.post('/api/plus/subscribe', { plan: 'yearly', email });
-    const order = await (await t.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
-    assert.equal(order.plusApplied, true);
-    assert.equal(order.total, 9.31);
-    const res = await t.post('/api/plus/cancel', { email });
-    assert.equal(res.status, 202);
+  test('subscribe in demo con account: restituisce url e stato Plus', async () => {
+    const a = await t.registerUser('plus-url@example.it');
+    assert.equal((await a.post('/api/plus/subscribe', { plan: 'weekly' })).status, 400);
+    const res = await a.post('/api/plus/subscribe', { plan: 'monthly' });
+    assert.equal(res.status, 200);
     const body = await res.json();
-    assert.equal(body.canceled, true);
-    const after = await (await t.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
+    assert.ok(body.url.includes('monthly'));
+    assert.equal(body.demo, true);
+    assert.equal(body.trialDays, 14);
+    assert.equal(body.plus.active, true);
+    const me = await (await a.get('/api/auth/me')).json();
+    assert.equal(me.plus.status, 'trialing');
+    assert.equal((await a.post('/api/plus/subscribe', { plan: 'yearly' })).status, 400, 'niente doppio abbonamento');
+  });
+
+  test('i vantaggi valgono per gli ordini dell\'account, NON per chi usa la sua email da ospite', async () => {
+    const email = 'plusdemo@example.it';
+    const a = await t.registerUser(email);
+    await a.post('/api/plus/subscribe', { plan: 'yearly' });
+    const order = await (await a.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
+    assert.equal(order.plusApplied, true);
+    assert.equal(order.account, true);
+    assert.equal(order.total, 9.31);
+    // Debolezza segnalata dal QA: prima bastava conoscere l'email di un membro.
+    const guest = await (await t.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
+    assert.equal(guest.plusApplied, false);
+    assert.equal(guest.total, 14.7);
+    // e un estraneo non può disdire l'abbonamento altrui
+    const other = await t.registerUser('altro@example.it');
+    assert.equal((await other.post('/api/plus/cancel', { email })).status, 400);
+    assert.equal((await (await a.get('/api/auth/me')).json()).plus.active, true);
+
+    const res = await a.post('/api/plus/cancel', {});
+    assert.equal(res.status, 202);
+    assert.equal((await res.json()).canceled, true);
+    assert.ok(outbox.some((m) => m.tag === 'plus-canceled' && m.to === email));
+    const after = await (await a.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
     assert.equal(after.plusApplied, false);
     assert.equal(after.total, 14.7); // 9,80 + 4,90
+    assert.equal((await (await a.get('/api/auth/me')).json()).plus, null);
   });
 
-  test('membro Plus (non demo): spedizione gratuita e -5% sugli ordini, poi disdetta via link email', async () => {
-    const email = 'plus@example.it';
-    await t.post('/api/plus/subscribe', { plan: 'monthly', email });
-    // simula un membro reale (es. arrivato dal webhook Stripe): la disdetta richiede il link via email
-    const pf = path.join(t.dataDir, 'plus.json');
-    const pdata = JSON.parse(await fs.readFile(pf, 'utf8'));
-    pdata.members.find((m) => m.email === email).demo = false;
-    await fs.writeFile(pf, JSON.stringify(pdata));
-    const order = await (await t.post('/api/orders', { customer: { ...CUSTOMER, email }, items: [{ id: 'fieno-coniglio-1kg', qty: 2 }] })).json();
-    assert.equal(order.shipping, 0);
-    assert.equal(order.total, 9.31); // 9,80 - 5%
-
-    const res = await t.post('/api/plus/cancel', { email });
-    assert.equal(res.status, 202);
-    assert.equal((await res.json()).canceled, undefined);
-    const mail = outbox.findLast((m) => m.tag === 'plus-cancel');
-    const link = new URL(mail.text.match(/https?:\/\/\S+/)[0]);
-    assert.equal((await t.get(link.pathname + link.search)).status, 200);
-    const plus = JSON.parse(await fs.readFile(path.join(t.dataDir, 'plus.json'), 'utf8'));
-    assert.equal(plus.members.find((m) => m.email === email).status, 'canceled');
-
-    const unknown = await t.post('/api/plus/cancel', { email: 'sconosciuto@example.it' });
-    assert.equal(unknown.status, 202, 'risposta identica per non rivelare gli iscritti');
-    assert.equal((await t.post('/api/plus/cancel', {})).status, 400);
+  test('cancel senza token CSRF -> 403', async () => {
+    const a = await t.registerUser('plus-csrf@example.it');
+    await a.post('/api/plus/subscribe', { plan: 'monthly' });
+    const res = await a.post('/api/plus/cancel', {}, { 'x-csrf-token': 'sbagliato' });
+    assert.equal(res.status, 403);
+    assert.equal((await (await a.get('/api/auth/me')).json()).plus.active, true);
   });
 
   test('GET /api/plus/lives', async () => {
@@ -314,13 +323,15 @@ describe('metodi di spedizione (allineati alla pagina)', () => {
 
   test('Plus: standard e point gratis, express sempre 9,90; coupon e Plus sul subtotale', async () => {
     const email = 'plusship@example.it';
-    await t.post('/api/plus/subscribe', { plan: 'monthly', email });
-    const std = await (await order(small, { shippingMethod: 'standard' }, email)).json();
-    const pt = await (await order(small, { shippingMethod: 'point' }, email)).json();
-    const ex = await (await order(small, { shippingMethod: 'express' }, email)).json();
+    const a = await t.registerUser(email);
+    await a.post('/api/plus/subscribe', { plan: 'monthly' });
+    const order = (items, extra = {}) => a.post('/api/orders', { customer: { ...CUSTOMER, email }, items, ...extra });
+    const std = await (await order(small, { shippingMethod: 'standard' })).json();
+    const pt = await (await order(small, { shippingMethod: 'point' })).json();
+    const ex = await (await order(small, { shippingMethod: 'express' })).json();
     assert.deepEqual([std.shipping, pt.shipping, ex.shipping], [0, 0, 9.9]);
     assert.equal(ex.total, 14.55); // 4,90 - 0,25 + 9,90
-    const both = await (await order([{ id: 'umido-gatto-tonno-12x85', qty: 10 }], { coupon: 'CUCCIOLO5' }, email)).json();
+    const both = await (await order([{ id: 'umido-gatto-tonno-12x85', qty: 10 }], { coupon: 'CUCCIOLO5' })).json();
     assert.equal(both.discount, 9.9); // 5% + 5% di 99,00
     assert.equal(both.total, 89.1);
   });

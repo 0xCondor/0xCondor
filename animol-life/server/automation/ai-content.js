@@ -96,3 +96,51 @@ export async function runAiContent({ cfg, catalog, log }, args = {}, { client } 
   }
   return output;
 }
+
+const DESCRIPTION_SCHEMA = {
+  type: 'object',
+  properties: { description: { type: 'string' } },
+  required: ['description'],
+  additionalProperties: false,
+};
+
+const DESCRIPTION_PROMPT = `Sei il copywriter di Animol Life, negozio online italiano per animali.
+Scrivi in italiano la descrizione per la scheda del prodotto JSON fornito (60-110 parole), calda ma concreta,
+basata SOLO su nome, marca, categoria, specifiche e note fornite.
+Vincoli: non inventare caratteristiche, certificazioni o benefici non presenti nei dati; nessuna indicazione sulla salute
+per alimenti e snack (Reg. CE 767/2009: un mangime non può dichiarare di prevenire, trattare o curare malattie) e nessuna
+promessa terapeutica o consiglio veterinario; niente superlativi assoluti non verificabili; non citare prezzi o sconti.`;
+
+/**
+ * Bozza di descrizione per un singolo prodotto (pulsante "Genera con IA" del pannello admin).
+ * Con ANTHROPIC_API_KEY (o un client iniettato) usa Claude con output JSON strutturato;
+ * altrimenti, o in caso di errore, restituisce il testo del modello predefinito. È sempre una bozza da rivedere.
+ */
+export async function generateProductDescription(cfg, product, { client } = {}) {
+  const p = { specs: {}, variants: [], description: '', brand: '', price: 0, salePrice: null, sold: 0, ...product };
+  const anthropic = client ?? (cfg.anthropicApiKey ? new Anthropic({ apiKey: cfg.anthropicApiKey }) : null);
+  if (anthropic) {
+    try {
+      const response = await anthropic.beta.messages.create({
+        model: cfg.anthropicModel,
+        max_tokens: 4000,
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: DESCRIPTION_SCHEMA } },
+        system: DESCRIPTION_PROMPT,
+        messages: [{ role: 'user', content: JSON.stringify({ name: p.name, brand: p.brand, category: p.category, specs: p.specs, note: p.description }) }],
+      });
+      if (response.stop_reason === 'refusal') throw new Error('richiesta rifiutata dal modello');
+      if (response.stop_reason === 'max_tokens') throw new Error('risposta troncata');
+      const text = response.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+      const description = String(JSON.parse(text).description || '').trim().slice(0, 2000);
+      if (description) return { mode: 'claude', description, draft: true };
+    } catch (err) {
+      console.warn(`[ai-content] descrizione con Claude non disponibile (${err.message}): uso il modello di testo`);
+    }
+  }
+  const specs = Object.entries(p.specs || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
+  const description = `${p.name}${p.brand ? ` di ${p.brand}` : ''}.${p.description ? ` ${p.description}` : ''}${specs ? ` Caratteristiche: ${specs}.` : ''} ` +
+    'Disponibile su Animol Life, con spedizione gratuita sopra i 49 € e 14 giorni per il recesso.';
+  return { mode: 'template', description: description.trim().slice(0, 2000), draft: true };
+}

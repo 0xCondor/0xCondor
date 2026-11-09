@@ -57,11 +57,12 @@ export function formatEuro(cents) {
  * la spedizione (standard o Animol Point) è gratuita sopra soglia (dopo gli sconti) o per i membri Plus;
  * l'express costa sempre 9,90 €. Coupon e Plus si calcolano entrambi sul subtotale (non in cascata).
  */
-export function computeTotals({ lines, couponCode, isPlus, shipping, shippingMethod = 'standard' }) {
+export function computeTotals({ lines, couponCode, couponPercent: pct, isPlus, shipping, shippingMethod = 'standard' }) {
   const method = SHIPPING_METHODS[shippingMethod] ? shippingMethod : 'standard';
   const subtotalCents = lines.reduce((s, l) => s + l.unitCents * l.qty, 0);
-  const coupon = couponCode ? COUPONS[couponCode] : null;
-  const couponPercent = coupon ? coupon.percent : 0;
+  // Con il database i coupon arrivano già risolti (couponPercent); COUPONS resta come default iniziale.
+  const coupon = couponCode && pct === undefined ? COUPONS[couponCode] : null;
+  const couponPercent = pct ?? (coupon ? coupon.percent : 0);
   const plusPercent = isPlus ? PLUS.discountPercent : 0;
   const couponDiscountCents = Math.round((subtotalCents * couponPercent) / 100);
   const plusDiscountCents = Math.round((subtotalCents * plusPercent) / 100);

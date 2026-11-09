@@ -1,6 +1,9 @@
-// Catalogo: letto in modo pigro da public/products.json (scritto dal frontend),
-// ricaricato se il file cambia; se manca o è invalido si usa un piccolo campione.
+// Catalogo. Con un repository (server) i prodotti stanno nel database: al primo avvio vengono
+// importati da public/products.json (o, se manca, da un piccolo campione) e ogni modifica dall'admin
+// riscrive products.json per compatibilità. Senza repository (script, test) legge products.json,
+// ricaricandolo se il file cambia.
 import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
 import path from 'node:path';
 
 export const CATEGORIES = ['cani', 'gatti', 'uccelli', 'pesci', 'piccoli'];
@@ -74,20 +77,61 @@ function normalize(p) {
     variants: Array.isArray(p.variants)
       ? p.variants
           .filter((v) => v && v.label != null && Number.isFinite(num(v.price)))
-          .map((v) => ({ label: String(v.label), price: num(v.price), salePrice: Number.isFinite(num(v.salePrice)) ? num(v.salePrice) : null }))
+          .map((v) => ({
+            label: String(v.label), price: num(v.price), salePrice: Number.isFinite(num(v.salePrice)) ? num(v.salePrice) : null,
+            lowestPrice30d: Number.isFinite(num(v.lowestPrice30d)) ? num(v.lowestPrice30d) : null,
+          }))
       : [],
+    stock: Number.isInteger(p.stock) ? p.stock : null,
   };
 }
 
+/** Forma pubblica completa usata da GET /api/products e da products.json (stesso ordine di chiavi del file storico). */
+export function exportProduct(p) {
+  const out = {
+    id: p.id, name: p.name, brand: p.brand, category: p.category, price: p.price, salePrice: p.salePrice ?? null,
+    lowestPrice30d: p.lowestPrice30d ?? null, rating: p.rating, reviews: p.reviews, sold: p.sold,
+    description: p.description, specs: p.specs,
+    variants: p.variants.map((v) => ({ label: v.label, price: v.price, salePrice: v.salePrice ?? null, lowestPrice30d: v.lowestPrice30d ?? null })),
+  };
+  if (p.stock !== null && p.stock !== undefined) out.stock = p.stock;
+  return out;
+}
+
+function readSeedFile(file) {
+  try {
+    const raw = JSON.parse(fsSync.readFileSync(file, 'utf8'));
+    const list = (Array.isArray(raw) ? raw : raw.products || []).map(normalize).filter(Boolean);
+    return list.length ? list : null;
+  } catch {
+    return null;
+  }
+}
+
 export class Catalog {
-  constructor(publicDir) {
+  constructor(publicDir, { repo = null, exportFile } = {}) {
     this.file = path.join(publicDir, 'products.json');
+    this.exportFile = exportFile === undefined ? this.file : exportFile;
+    this.repo = repo;
     this.cache = null;
     this.mtime = 0;
-    this.source = 'sample';
+    this.version = -1;
+    this.source = repo ? 'database' : 'sample';
+    if (repo) {
+      const seed = readSeedFile(this.file);
+      repo.products.seed(seed || SAMPLE_PRODUCTS.map(normalize), seed ? 'products.json' : 'sample');
+      this.seed = repo.meta.get('catalog_seed') || 'sample';
+    }
   }
 
   async all() {
+    if (this.repo) {
+      if (!this.cache || this.version !== this.repo.products.version) {
+        this.cache = this.repo.products.list().map(normalize).filter(Boolean);
+        this.version = this.repo.products.version;
+      }
+      return this.cache;
+    }
     try {
       const stat = await fs.stat(this.file);
       if (!this.cache || stat.mtimeMs !== this.mtime) {
@@ -112,6 +156,17 @@ export class Catalog {
 
   async get(id) {
     return (await this.all()).find((p) => p.id === String(id)) || null;
+  }
+
+  /** Riscrive products.json dal database (scrittura atomica). Disattivabile con CATALOG_EXPORT_FILE=off. */
+  async exportJson() {
+    if (!this.repo || !this.exportFile) return null;
+    const list = (await this.all()).map(exportProduct);
+    const tmp = `${this.exportFile}.${process.pid}.${Date.now()}.tmp`;
+    await fs.mkdir(path.dirname(this.exportFile), { recursive: true });
+    await fs.writeFile(tmp, JSON.stringify(list, null, 2) + '\n');
+    await fs.rename(tmp, this.exportFile);
+    return this.exportFile;
   }
 
   /** Ricerca semplice per parole chiave, categoria e prezzo massimo (usata dall'IA e dal fallback). */
@@ -173,5 +228,6 @@ export function publicProduct(p) {
     rating: p.rating, reviews: p.reviews,
     variants: p.variants.map((v) => ({ label: v.label, price: effectivePrice(p, v) })),
     description: p.description.slice(0, 300), specs: p.specs,
+    ...(p.stock === 0 ? { available: false } : {}),
   };
 }

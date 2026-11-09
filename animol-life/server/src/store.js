@@ -1,6 +1,9 @@
-// Piccolo archivio JSON su file con scrittura atomica e coda per file (no DB in demo).
+// Archivi a documento JSON su file (scrittura atomica + coda per file) per newsletter, membri Plus,
+// carrelli e inventario. Gli ordini e gli account stanno invece nel database (src/repo.js): `stores.orders`
+// è un adattatore di sola lettura usato dai job di automazione.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { openRepo } from './repo.js';
 
 const queues = new Map();
 
@@ -50,9 +53,12 @@ export async function appendJsonLine(dataDir, name, record) {
   return enqueue(file, () => fs.appendFile(file, JSON.stringify(record) + '\n'));
 }
 
-export function stores(dataDir) {
+export function stores(dataDir, repo = openRepo(dataDir)) {
   return {
-    orders: new JsonStore(dataDir, 'orders', []),
+    orders: {
+      read: async () => repo.orders.all(),
+      get: async (id) => repo.orders.get(id),
+    },
     newsletter: new JsonStore(dataDir, 'newsletter', []),
     plus: new JsonStore(dataDir, 'plus', { members: [], tokens: [] }),
     carts: new JsonStore(dataDir, 'carts', []),

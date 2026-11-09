@@ -3,6 +3,8 @@ import crypto from 'node:crypto';
 import { effectivePrice } from './catalog.js';
 import { COUPONS, SHIPPING_METHODS, computeTotals } from './policies.js';
 import { sendEmail } from './email.js';
+import { isPlusMember } from './plus.js';
+import { assertPayable } from './payments.js';
 import {
   ValidationError, requireString, optionalString, requireEmail, isPlainObject, CAP_RE, ORDER_ID_RE,
 } from './security.js';
@@ -69,10 +71,21 @@ export async function resolveCart(catalog, items, { strict = true } = {}) {
   return lines;
 }
 
-export async function isPlusMember(stores, email) {
-  if (!email) return false;
-  const data = await stores.plus.read();
-  return data.members.some((m) => m.email === email && ['active', 'trialing'].includes(m.status));
+/** Coupon valido adesso: dal database se disponibile, altrimenti dai coupon predefiniti. */
+export function resolveCoupon(repo, raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  const code = String(raw).trim().toUpperCase().slice(0, 30);
+  if (repo) {
+    const c = /^[A-Z0-9]{3,20}$/.test(code) ? repo.coupons.usable(code) : null;
+    if (!c) throw new ValidationError('Codice coupon non valido o scaduto', 'coupon');
+    return { code: c.code, percent: c.percent, description: c.description };
+  }
+  if (!COUPONS[code]) throw new ValidationError('Codice coupon non valido', 'coupon');
+  return { code, percent: COUPONS[code].percent, description: COUPONS[code].description };
+}
+
+class StockError extends ValidationError {
+  constructor(message) { super(message, 'items'); }
 }
 
 function parseCustomer(body) {
@@ -93,46 +106,70 @@ function parseCustomer(body) {
   return customer;
 }
 
-export async function createOrder({ cfg, catalog, stores }, body) {
+/**
+ * Crea l'ordine. Ospite (user null) o cliente autenticato: in quel caso l'ordine è collegato all'account
+ * e lo sconto Plus vale solo se l'ACCOUNT ha un abbonamento attivo. I totali vengono sempre ricalcolati.
+ */
+export async function createOrder({ cfg, catalog, stores, repo }, body, { user = null } = {}) {
   if (!isPlainObject(body)) throw new ValidationError('Corpo della richiesta non valido');
   const customer = parseCustomer(body);
   const lines = await resolveCart(catalog, body.items ?? body.cart);
-  let couponCode = null;
-  if (body.coupon) {
-    couponCode = String(body.coupon).trim().toUpperCase().slice(0, 30);
-    if (!COUPONS[couponCode]) throw new ValidationError('Codice coupon non valido', 'coupon');
-  }
+  const coupon = resolveCoupon(repo, body.coupon);
   const shippingMethod = parseShippingMethod(body);
-  const isPlus = await isPlusMember(stores, customer.email);
-  const totals = computeTotals({ lines, couponCode, isPlus, shipping: cfg.shipping, shippingMethod });
+  const isPlus = user ? await isPlusMember(stores, user.id) : false;
+  const totals = computeTotals({ lines, couponCode: coupon?.code ?? null, couponPercent: coupon?.percent ?? 0, isPlus, shipping: cfg.shipping, shippingMethod });
   const notes = optionalString(body, 'notes', { max: 500, label: 'note' });
   const paymentMethod = ['card', 'paypal', 'cod'].includes(body.paymentMethod) ? body.paymentMethod : 'card';
   // Il contrassegno non aggiunge mai costi (art. 62 Cod. Consumo); è disponibile solo fino a 500 €.
   if (paymentMethod === 'cod' && totals.totalCents > COD_MAX_CENTS) {
     throw new ValidationError('Il contrassegno è disponibile per ordini fino a 500 €', 'paymentMethod');
   }
+  assertPayable(cfg, paymentMethod);
 
   const now = new Date();
   const order = {
     orderId: newOrderId(now),
     createdAt: now.toISOString(),
+    userId: user?.id ?? null,
     status: 'ricevuto',
     paymentMethod,
-    paymentStatus: 'pending',
+    paymentStatus: paymentMethod === 'cod' ? 'cod' : 'pending',
     customer,
     lines,
-    couponCode,
+    couponCode: coupon?.code ?? null,
+    couponPercent: coupon?.percent ?? 0,
     isPlus,
     ...totals,
     total: totals.totalCents / 100,
     notes,
+    tracking: null,
+    history: [{ at: now.toISOString(), event: 'created', by: user ? 'customer' : 'guest' }],
   };
-  await stores.orders.update((orders) => {
-    while (orders.some((o) => o.orderId === order.orderId)) order.orderId = newOrderId(now);
-    orders.push(order);
-  });
+  repo.orders.insert(order, { onConflictId: () => newOrderId(now), StockError });
   await sendOrderConfirmation(cfg, order);
   return order;
+}
+
+const PAYMENT_LABELS = { pending: 'in attesa di pagamento', paid: 'pagato', failed: 'pagamento non riuscito', refunded: 'rimborsato', cod: 'da pagare alla consegna' };
+
+/** Riepilogo per il cliente (area personale): niente dati interni di pagamento. */
+export function orderSummary(o, { full = false } = {}) {
+  const status = deriveStatus(o);
+  const out = {
+    orderId: o.orderId, createdAt: o.createdAt, status, statusLabel: STATUS_LABELS[status] || status,
+    paymentStatus: o.paymentStatus, paymentLabel: PAYMENT_LABELS[o.paymentStatus] || o.paymentStatus,
+    paymentMethod: o.paymentMethod, shippingMethod: o.shippingMethod, total: o.total,
+    items: o.lines.map((l) => ({ id: l.id, name: l.name, variant: l.variant, qty: l.qty, unitPrice: l.unitCents / 100 })),
+    tracking: o.tracking || null,
+    canPay: o.paymentMethod !== 'cod' && ['pending', 'failed'].includes(o.paymentStatus) && !['annullato', 'rimborsato'].includes(o.status),
+  };
+  if (full) {
+    Object.assign(out, {
+      customer: o.customer, couponCode: o.couponCode, plusApplied: o.isPlus, notes: o.notes,
+      subtotal: o.subtotalCents / 100, discount: (o.couponDiscountCents + o.plusDiscountCents) / 100, shipping: o.shippingCents / 100,
+    });
+  }
+  return out;
 }
 
 /** Hook email di conferma ordine (stub: in demo registra soltanto). */
@@ -156,16 +193,12 @@ const STATUS_LABELS = {
   spedito: 'spedito, in viaggio verso di te',
   consegnato: 'consegnato',
   annullato: 'annullato',
+  rimborsato: 'annullato e rimborsato',
 };
 
-/** Stato derivato: se l'ordine non è stato aggiornato a mano, simula l'avanzamento in base all'età (demo). */
-export function deriveStatus(order, now = Date.now()) {
-  if (order.status && order.status !== 'ricevuto') return order.status;
-  const hours = (now - Date.parse(order.createdAt)) / 3_600_000;
-  if (hours < 2) return 'ricevuto';
-  if (hours < 24) return 'in_preparazione';
-  if (hours < 96) return 'spedito';
-  return 'consegnato';
+/** Stato mostrato al cliente: quello impostato dal negozio (nessuna simulazione). */
+export function deriveStatus(order) {
+  return order.status || 'ricevuto';
 }
 
 export function normalizeOrderId(raw) {
@@ -189,14 +222,14 @@ export function normalizeOrderId(raw) {
 export async function lookupOrder(stores, { orderId, email, cap }) {
   const id = normalizeOrderId(orderId);
   if (!id) throw new ValidationError('Numero ordine non valido (formato AL-AAAA-XXXXXX)', 'orderId');
-  const orders = await stores.orders.read();
-  const order = orders.find((o) => o.orderId === id);
+  const order = stores.orders.get ? await stores.orders.get(id) : (await stores.orders.read()).find((o) => o.orderId === id);
   if (!order) return null;
   const status = deriveStatus(order);
   const result = {
     orderId: order.orderId,
     status,
-    statusLabel: STATUS_LABELS[status] || status,
+    statusLabel: order.paymentStatus === 'pending' && status === 'ricevuto' ? 'in attesa di pagamento' : (STATUS_LABELS[status] || status),
+    paymentStatus: order.paymentStatus,
     createdAt: order.createdAt,
   };
   const verified =
@@ -205,8 +238,9 @@ export async function lookupOrder(stores, { orderId, email, cap }) {
   if (verified) {
     result.items = order.lines.map((l) => ({ name: l.name, variant: l.variant, qty: l.qty }));
     result.total = order.total;
+    if (order.tracking) result.tracking = order.tracking;
   }
   return result;
 }
 
-export { STATUS_LABELS };
+export { STATUS_LABELS, PAYMENT_LABELS };

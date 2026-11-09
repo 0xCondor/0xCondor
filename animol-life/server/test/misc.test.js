@@ -32,7 +32,8 @@ test('catalogo letto da products.json del frontend', async () => {
   const t = await startTestServer({ products });
   servers.push(t);
   const health = await (await t.get('/api/health')).json();
-  assert.equal(health.catalog.source, 'products.json');
+  assert.equal(health.catalog.source, 'database');
+  assert.equal(health.catalog.seed, 'products.json');
   assert.equal(health.catalog.count, 1);
   const order = await (await t.post('/api/orders', { customer: CUSTOMER, items: [{ id: 'p1', variant: 'Grande', qty: 1 }] })).json();
   assert.equal(order.total, 79);
